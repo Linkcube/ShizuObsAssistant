@@ -1,0 +1,8 @@
+*.json
+tkinter_test.py
+source_add.py
+print_all_source_settings_etc.py
+__main__.py
+__pycache__
+ledgers_backup
+.vscode

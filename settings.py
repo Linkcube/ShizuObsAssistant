@@ -1,0 +1,10 @@
+SOFTWARE_VERSION = "Alpha-0.0.1"
+RTMP_US_EAST = "us-east"
+RTMP_US_WEST = "us-west"
+RTMP_JAPAN = "japan"
+RTMP_VALUES = [RTMP_US_EAST, RTMP_US_WEST, RTMP_JAPAN]
+DJ_KEY = "djs"
+PROMO_KEY = "promos"
+LEDGERS_BACKUP = "ledgers_backup"
+LINEUP_BACKUP = "lineup_backup"
+RTMP_BASE = "anisonhijack.com/live/"
