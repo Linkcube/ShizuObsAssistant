@@ -62,7 +62,7 @@ class Hijack:
                 None,
                 dj_entry.get("resolution")
             )
-            if dj_entry.get("url"):
+            if len(dj_entry.get("url", "")) > 0:
                 dj_scene.stream_url = dj_entry.get("url")
             else:
                 dj_scene.recording_path = dj_entry.get("recording_path")

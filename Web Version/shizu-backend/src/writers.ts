@@ -401,7 +401,7 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
       return {
         name: dj.name,
         logo_path: dj.logo_path,
-        recoding_path: dj.recording_path,
+        recording_path: dj.recording_path,
         resolution: await dj.resolution,
         url: dj.url
       }
@@ -436,7 +436,11 @@ function getResolution(path: string): Promise<any> {
         console.log(err);
         reject();
       }
-      resolve(metadata.streams.filter(stream => stream.codec_type === "video").map(stream => [stream.width, stream.height]));
+      const video_stream = metadata.streams.filter(stream => stream.codec_type === "video");
+      if (video_stream) {
+        resolve(video_stream.map(stream => [stream.width, stream.height])[0]);
+      }
+      resolve([]);
     });
   });
 }
