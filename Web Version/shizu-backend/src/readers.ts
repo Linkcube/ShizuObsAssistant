@@ -48,6 +48,14 @@ export const getLineup = (data: { name: string }) => {
 
   const file_contents: ILineup = JSON.parse(readFileSync(path, "utf-8"));
 
+  // Python lineups value conversion
+  file_contents.djs = file_contents.djs.map(dj => {
+    if (dj.url) dj.is_live = true;
+    if (dj.recording_path) dj.is_live = false;
+    if (dj.is_live == null) dj.is_live = false;
+    return dj;
+  })
+
   return file_contents;
 };
 

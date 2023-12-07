@@ -369,7 +369,7 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
     };
     export_data.logo_path = dj_data.logo_path ? dj_data.logo_path : "";
     if (dj.is_live) {
-      export_data.url = `rtmp://rtmp-${dj_data.rtmp_server}anisonhijack.com/live/${dj_data.stream_key}`;
+      export_data.url = `rtmp://rtmp-${dj_data.rtmp_server}.anisonhijack.com/live/${dj_data.stream_key}`;
     } else {
       if (dj_data.recording_path !== undefined) {
         export_data.recording_path = dj_data.recording_path;

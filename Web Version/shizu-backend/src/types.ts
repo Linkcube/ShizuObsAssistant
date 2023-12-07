@@ -9,6 +9,8 @@ export interface IDj {
 export interface ILineupDj {
   name: string;
   is_live: boolean;
+  url?: string;
+  recording_path?: string
 }
 export interface IPromo {
   name: string;
