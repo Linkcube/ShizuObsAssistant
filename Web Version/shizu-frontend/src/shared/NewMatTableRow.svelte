@@ -32,17 +32,24 @@
     }
 
     function handleDragStart(e) {
-        dispatch('dragstart', { values: values});
-        e.dataTransfer.dropEffect = "move";
+        if (draggable) {
+            dispatch('dragstart', { values: values});
+            e.dataTransfer.dropEffect = "move";
+        }
     }
 
     function handleDragEnd(e) {
-        e.preventDefault();
-        dispatch('dragend', { event: e});
+        if (draggable) {
+            e.preventDefault();
+            dispatch('dragend', { event: e});
+        }
     }
 
     function handleDragOver(e) {
-        dispatch('dragover', { event: e});
+        if (draggable) {
+            e.preventDefault();
+            dispatch('dragover', { event: e});
+        }
     }
 </script>
 

@@ -42,7 +42,6 @@
     const close = () => dispatch('close');
 
     function saveDj() {
-        console.log(name, logo_path, recording_path, rtmp_server, stream_key);
         if (index < 0) {
             fetchAddDj(
                 name,
@@ -137,7 +136,7 @@
             <MaterialInput label="DJ Name" bind:value={name}/>
             {#if index >= 0}
                 <div class="delete">
-                    <IconButton icon="delete" title="Delete DJ" on:click={removeDj} />
+                    <IconButton icon="delete_forever" title="Delete DJ" on:click={removeDj} />
                 </div>
             {/if}
         </div>

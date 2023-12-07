@@ -20,7 +20,7 @@
     let display_ledger_djs = [];
 	let ledger_promos = [];
     let display_ledger_promos = [];
-    let searchValue = null;
+    let search_value = null;
     let show_dj_modal = false;
     let show_promo_modal = false;
 
@@ -49,8 +49,9 @@
             display_ledger_promos = ledger_promos
 		}
 	});
+
     const enterSearch = () => {
-        if (searchValue === "") {
+        if (search_value === "") {
             if (show_djs) {
                 display_ledger_djs = ledger_djs;
             } else {
@@ -58,9 +59,9 @@
             }
         } else {
             if (show_djs) {
-                display_ledger_djs = ledger_djs.filter(dj => dj.name.toUpperCase().includes(searchValue.toUpperCase()));
+                display_ledger_djs = ledger_djs.filter(dj => dj.name.toUpperCase().includes(search_value.toUpperCase()));
             } else {
-                display_ledger_promos = ledger_promos.filter(promo => promo.name.toUpperCase().includes(searchValue.toUpperCase()));
+                display_ledger_promos = ledger_promos.filter(promo => promo.name.toUpperCase().includes(search_value.toUpperCase()));
             }
         }
     }
@@ -196,7 +197,7 @@
     </div>
     <div class="flex-row space-between">
         <div class="display-button">
-            <MaterialInput label="Search {show_djs ? "DJs": "Promos"}" bind:value={searchValue} on:blur={enterSearch} on:enter={enterSearch}/>
+            <MaterialInput label="Search {show_djs ? "DJs": "Promos"}" bind:value={search_value} on:blur={enterSearch} on:enter={enterSearch}/>
         </div>
         <div class="display-button icon-container">
             <IconButton icon="sync_alt" title="Show {show_djs ? 'Promos' : 'DJs'}" on:click={toggleDisplay} />

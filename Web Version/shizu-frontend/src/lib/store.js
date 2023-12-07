@@ -12,7 +12,7 @@ export const currentThemeIndex = writable(0);
 export const currentTheme = writable({});
 export const themes = writable([]);
 
-export const graphqlBase = 'http://localhost:4000';
+export const graphqlBase = 'http://localhost:4004';
 const graphqlUrl = `${graphqlBase}/graphql`;
 
 export const RTMP_SERVERS = [

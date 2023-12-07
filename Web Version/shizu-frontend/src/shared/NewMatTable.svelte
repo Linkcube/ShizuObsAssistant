@@ -6,6 +6,11 @@
     export let columnSizes;
     export let height = "100%";
 
+    let animated = false;
+    if (items.length > 0) {
+        animated = items[0].hasOwnProperty("name");
+    }
+
     setContext('sizes', columnSizes);
 </script>
 
@@ -35,12 +40,17 @@
         <slot name="header"></slot>
     </span>
     <span class="items-container" style="--height: {height};">
-        <!-- {#each items as item, index (item.name)} -->
-        {#each items as item, index}
-            <!-- <div animate:flip> -->
-                <slot name="item" {item} {index}></slot>
-            <!-- </div> -->
-        {/each}
+        {#if animated}
+            {#each items as item, index (item.name)}
+                <div animate:flip>
+                    <slot name="item" {item} {index}></slot>
+                </div>
+            {/each}
+        {:else}        
+            {#each items as item, index}
+                    <slot name="item" {item} {index}></slot>
+            {/each}
+        {/if}
     </span>
     <span class="row">
         <slot name="footer"></slot>

@@ -17,7 +17,10 @@
     import {
         MaterialTable,
         MaterialTableRow,
-		IconButton
+		IconButton,
+
+        MaterialInput
+
     } from 'linkcube-svelte-components';
     import AddLineupModal from '../shared/AddLineupModal.svelte';
     import DjLineupModal from '../shared/DjLineupModal.svelte';
@@ -27,11 +30,13 @@
     import NewMatTable from './NewMatTable.svelte';
 
     let lineups_data = []
+    let display_lineups = []
     let show_lineup_djs = true;
 	let show_add_lineup = false;
     let lineup_djs = [];
 	let lineup_promos = [];
     let current_lineup = null;
+    let search_value = null;
 
     let edit_dj_index = 0;
     let edit_dj_name = "";
@@ -48,12 +53,22 @@
 
     let selecting_export_dir = false;
 
-    lineups.subscribe(value => lineups_data = value);
+    lineups.subscribe(value => {
+        lineups_data = value;
+        if (lineups_data) {
+            display_lineups = lineups_data.map((lineup, index) => {
+                return ({
+                    index: index,
+                    name: lineup
+                });
+            })
+        }
+    });
     currentLineup.subscribe(value => current_lineup = value);
 
 	currentLineupObjects.subscribe(value => {
 		lineup_djs = value.djs;
-		lineup_promos = value.promos;
+        if (value.promos) lineup_promos = value.promos.map(promo => ({name: promo}));
         loading = false;
 	});
 
@@ -65,6 +80,13 @@
 		fetchLineup(name).then(_ => {
 			currentLineup.set(name);
 			current_lineup = name;
+            search_value = null;
+            display_lineups = lineups_data.map((lineup, index) => {
+                return ({
+                    index: index,
+                    name: lineup
+                });
+            });
 		});
 	}
 
@@ -107,7 +129,7 @@
         }
         
         loading = true;
-        updateLineupHelper(current_lineup, lineup_djs, lineup_promos).then(_ => fetchLineup(current_lineup));
+        updateLineupHelper(current_lineup, lineup_djs, lineup_promos.map(promo => promo.name)).then(_ => fetchLineup(current_lineup));
     }
 
     function handlePromoDragEnd() {
@@ -123,7 +145,7 @@
         }
         
         loading = true;
-        updateLineupHelper(current_lineup, lineup_djs, lineup_promos).then(_ => fetchLineup(current_lineup));
+        updateLineupHelper(current_lineup, lineup_djs, lineup_promos.map(promo => promo.name)).then(_ => fetchLineup(current_lineup));
     }
 
     function toggleLineupObjects() {
@@ -151,6 +173,40 @@
         fetchDeleteLineup(current_lineup).then(() => fetchLineups()).then(() => backToLineups());
     }
 
+    function compareBy(field, direction) {
+        switch(field) {
+            case "#":
+                if (direction) return (a, b) => a.index < b.index;
+                return (a, b) => a.index > b.index;
+            case "name":
+                if (direction) return (a, b) => a.name.localeCompare(b.name) * -1;
+                return (a, b) => a.name.localeCompare(b.name);
+        }
+    }
+
+    function sortLineups(event) {
+        display_lineups = display_lineups.sort(compareBy(event.detail.value, event.detail.direction));
+    }
+
+    const enterSearch = () => {
+        if (search_value === "") {
+            display_lineups = lineups_data.map((lineup, index) => {
+                return ({
+                    index: index,
+                    name: lineup
+                });
+            })
+        } else {
+            display_lineups = lineups_data.filter(lineup => lineup.toUpperCase().includes(search_value.toUpperCase()))
+            .map((lineup, index) => {
+                return ({
+                    index: index,
+                    name: lineup
+                });
+            });
+        }
+    }
+
     
 </script>
 
@@ -176,10 +232,6 @@
 
 	.space-between {
 		justify-content: space-between;
-	}
-
-	.right {
-		justify-content: flex-end;
 	}
 
     .icon-container {
@@ -221,21 +273,23 @@
         <h1>Lineups</h1>
     </div>
     {#if current_lineup === null}
-        <div class="flex-row icon-container space-between">
-            <p>Add/Select Lineups</p>
+        <div class="flex-row space-between">
+            <MaterialInput label="Search Lineups" bind:value={search_value} on:blur={enterSearch} on:enter={enterSearch}/>
             <div class="fill" />
-            <IconButton icon="add" title="Add Lineup" on:click={addLineup} />
+            <div class="icon-container">
+                <IconButton icon="add" title="Add Lineup" on:click={addLineup} />
+            </div>
         </div>
         <div class="flex-row">
-            <MaterialTable items={lineups_data} columnSizes={["10%", "90%"]} height="500px">
+            <MaterialTable items={display_lineups} columnSizes={["10%", "90%"]} height="500px">
                 <div slot="header">
-                    <MaterialTableRow values={["#", "name"]} type="header"/>
+                    <NewMatTableRow values={["#", "name"]} type="header callback" on:callback={sortLineups}/>
                 </div>
                 <div slot="item" let:item let:index>
                     <MaterialTableRow
-                        values={[`${index + 1}`, item]}
+                        values={[`${item.index + 1}`, item.name]}
                         type="click row"
-                        on:click={() => selectLineup(item)}
+                        on:click={() => selectLineup(item.name)}
                     />
                 </div>
             </MaterialTable>
@@ -254,7 +308,7 @@
         </div>
         <div class="flex-row">
             {#if show_lineup_djs}
-                <MaterialTable items={lineup_djs} columnSizes={["10%", "70%", "20%"]} height="500px">
+                <NewMatTable items={lineup_djs} columnSizes={["10%", "70%", "20%"]} height="500px">
                     <div slot="header">
                         <MaterialTableRow values={["#", "name", "Is Live"]} type="header"/>
                     </div>
@@ -268,15 +322,15 @@
                             on:dragend={() => handleDjDragEnd()}
                         />
                     </div>
-                </MaterialTable>
+                </NewMatTable>
             {:else}
-                <MaterialTable items={lineup_promos} columnSizes={["10%", "90%"]} height="500px">
+                <NewMatTable items={lineup_promos} columnSizes={["10%", "90%"]} height="500px">
                     <div slot="header">
                         <MaterialTableRow values={["#", "name"]} type="header"/>
                     </div>
                     <div slot="item" let:item let:index>
                         <NewMatTableRow
-                            values={[`${index + 1}`, item]}
+                            values={[`${index + 1}`, item.name]}
                             type="click row draggable"
                             on:click={() => editPromo(index, item)}
                             on:dragstart={() => handleDragStart(index)}
@@ -284,7 +338,7 @@
                             on:dragend={() => handlePromoDragEnd()}
                         />
                     </div>
-                </MaterialTable>
+                </NewMatTable>
             {/if}
         </div>
     {/if}
