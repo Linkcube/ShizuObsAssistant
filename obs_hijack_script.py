@@ -62,7 +62,7 @@ class Hijack:
                 None,
                 dj_entry.get("resolution")
             )
-            if len(dj_entry.get("url", "")) > 0:
+            if dj_entry.get("url"):
                 dj_scene.stream_url = dj_entry.get("url")
             else:
                 dj_scene.recording_path = dj_entry.get("recording_path")
@@ -162,6 +162,35 @@ class Hijack:
 
             S.obs_data_release(logo_settings)
             S.obs_source_release(logo_source)
+        else:
+            text_source_name = f"{scene_values.name}_text"
+            text_settings = S.obs_data_create()
+            S.obs_data_set_string(text_settings, "text", scene_values.name)
+            font_data_obj = S.obs_data_create_from_json(json.dumps({"face":"Arial","style":"Regular","size":200,"flags":0}))
+            S.obs_data_set_obj(text_settings, "font", font_data_obj)
+            text_source = S.obs_source_create("text_gdiplus", text_source_name, text_settings, None)
+            text_item = S.obs_scene_add(scene, text_source)
+
+            # From OBS c obs-defs.h
+            align_right = 1 << 1
+            align_bottom = 1 << 3
+
+            alignment = align_right | align_bottom
+            S.obs_sceneitem_set_alignment(text_item, alignment)
+
+            pos = S.vec2()
+            pos.x = self.render_width
+            pos.y = self.render_height
+            S.obs_sceneitem_set_pos(text_item, pos)
+
+            scale = S.vec2()
+            scale.x = 1
+            scale.y = 1
+            S.obs_sceneitem_set_scale(text_item, scale)
+
+            S.obs_data_release(text_settings)
+            S.obs_source_release(text_source)
+
 
     def setup_promo_scene_items(self, scene, promotion: 'ObsPromoScene'):
         # Load all promos into a single VLC playlist
