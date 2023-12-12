@@ -7,7 +7,10 @@ import {
   getLineups,
   getSettings,
   getFilePath,
-  getDirPath
+  getDirPath,
+  getLogoPermissions,
+  getRecordingPermissions,
+  getExportPermissions
 } from "./readers";
 import {
   addDj,
@@ -37,6 +40,9 @@ const root = {
   getSettings,
   getFilePath,
   getDirPath,
+  getLogoPermissions,
+  getRecordingPermissions,
+  getExportPermissions,
   addDj,
   addPromo,
   updateDj,
