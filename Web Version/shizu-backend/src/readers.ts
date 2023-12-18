@@ -220,12 +220,22 @@ function getFilesForPermission(top_dirs: string[], dirs_list: string[], dirs_onl
 
 export const getLogoPermissions = (data: { sub_dirs: string[]}) => {
   const permissions = getPermissions("logos");
-  return getFilesForPermission(permissions, data.sub_dirs, false);
+  let retval = getFilesForPermission(permissions, data.sub_dirs, false);
+  retval.files = retval.files.filter(file => {
+    return [".png", ".jpg", ".jpeg", ".apng", ".gif", ".webp", ".svg", ".avif"].includes(path.extname(file.name)) || file.is_dir
+  });
+
+  return retval;
 }
 
 export const getRecordingPermissions = (data: { sub_dirs: string[]}) => {
   const permissions = getPermissions("recordings");
-  return getFilesForPermission(permissions, data.sub_dirs, false);
+  let retval =  getFilesForPermission(permissions, data.sub_dirs, false);
+  retval.files = retval.files.filter(file => {
+    return [".mkv", ".webm", ".avi", ".mov", ".mp4"].includes(path.extname(file.name)) || file.is_dir
+  });
+
+  return retval;
 }
 
 export const getExportPermissions = (data: { sub_dirs: string[]}) => {

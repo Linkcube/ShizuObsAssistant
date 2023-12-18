@@ -343,12 +343,16 @@ re<script>
 <div class="modal-background" on:click={close}></div>
 
 <div class="modal" role="dialog" aria-modal="true" bind:this={modal}>
-	<div class="header">
-        <p>You're header here</p>
+	<div class="nav-header row">
+        <p>Current Directory: /{current_path.join("/")}</p>
     </div>
     <br>
 	<div class="main row">
         <div class="top-dir column">
+            <span class="top-dir-item column" on:click={navUp}>
+                <span class="material-icons large-icon">arrow_upward</span>
+                <p>Nav Up</p>
+            </span>
             {#each top_level_dirs as top_level_dir}
                 <span class="top-dir-item column" on:click={() => selectTopDir(top_level_dir)}>
                     <span class="material-icons large-icon">{current_path.includes(top_level_dir) ? "folder_open" : "folder"}</span>
@@ -358,10 +362,6 @@ re<script>
         </div>
         <div class="body column">
             <div class="nav-header row">
-                <p>Current Directory: /{current_path.join("/")}</p>
-                <div class="display-button icon-container">
-                    <IconButton icon="arrow_upward" title="Navigate up a Directory" on:click={navUp} />
-                </div>
             </div>
             <div class="file-selection column">
                 {#each current_files as file}
@@ -381,7 +381,7 @@ re<script>
             </div>
         </div>
         {#if file_type != EXPORT_TYPE}
-            <div class="preview">
+            <div class="preview column">
                 <span class="row">File Preview</span>
                 {#if selected_file}
                     <span class="preview-text">{selected_file}</span>

@@ -45,6 +45,9 @@
             <span>0. First Time Setup</span>
         </div>
         <div class="row text">
+            <span>Modify permissions.json to have the directories you need for logos/recording/exporting. If you are on windows don't forget to replace your '\' with '\\'</span>
+        </div>
+        <div class="row text">
             <span>Ensure that you have the ledger and lineups directory set where you want before working on this. Unlike the python script this shouldn't require constant loading/saving.</span>
         </div>
         <div class="row step">

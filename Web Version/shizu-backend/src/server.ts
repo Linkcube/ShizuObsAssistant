@@ -81,13 +81,13 @@ app.use(
 // Static permissions dirs
 let static_permissions = getStaticPathPermissions();
 static_permissions.logos.map(permission => {
-  app.use(`/logos/${permission.id}`, express.static(permission.path));
+  app.use(`/logos/${encodeURIComponent(permission.id)}`, express.static(permission.path));
 });
 static_permissions.recordings.map(permission => {
-  app.use(`/recordings/${permission.id}`, express.static(permission.path));
+  app.use(`/recordings/${encodeURIComponent(permission.id)}`, express.static(permission.path));
 });
 static_permissions.exports.map(permission => {
-  app.use(`/exports/${permission.id}`, express.static(permission.path));
+  app.use(`/exports/${encodeURIComponent(permission.id)}`, express.static(permission.path));
 });
 
 // Listen for graphql
