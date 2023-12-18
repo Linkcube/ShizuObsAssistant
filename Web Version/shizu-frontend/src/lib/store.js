@@ -12,7 +12,7 @@ export const currentThemeIndex = writable(0);
 export const currentTheme = writable({});
 export const themes = writable([]);
 
-export const graphqlBase = 'http://localhost:4004';
+export const graphqlBase = `${location.protocol}//${window.location.hostname}:4004`;
 const graphqlUrl = `${graphqlBase}/graphql`;
 
 export const RTMP_SERVERS = [
@@ -21,6 +21,10 @@ export const RTMP_SERVERS = [
     {id: "japan", name: "Japan"}
 ]
 export const RTMP_BASE = (server) => `rtmp://rtmp-${server}anisonhijack.com/live/`;
+
+export const LOGO_TYPE = 1
+export const RECORDING_TYPE = 2
+export const EXPORT_TYPE = 3
 
 export function toFileName(file_path) {
     if (file_path !== "") {
@@ -309,6 +313,42 @@ mutation {
     deleteLineup(name: "${name}")
 }`
 
+const getPermissionsQueryHelper = (query_head, sub_dirs) => {
+    let dirs_string = sub_dirs.map(dir => `"${dir}"`).join(',');
+    if (sub_dirs) {
+        query_head += `(sub_dirs: [${dirs_string}])`
+    }
+
+    return `
+    query {
+        ${query_head} {
+            files {
+                name,
+                is_dir
+            },
+            path,
+            top_dirs
+        }
+    }`
+}
+
+const getLogoPermissionsQuery = (sub_dirs) => getPermissionsQueryHelper("getLogoPermissions", sub_dirs);
+const getRecordingPermissionsQuery = (sub_dirs) => getPermissionsQueryHelper("getRecordingPermissions", sub_dirs);
+const getExportPermissionsQuery = (sub_dirs) => getPermissionsQueryHelper("getExportPermissions", sub_dirs);
+
+const reconstructPathHelper = (query_head, dirs) => {
+    let dirs_string = dirs.map(dir => `"${dir}"`).join(',');
+
+    return `
+    query {
+        ${query_head}(dirs: [${dirs_string}])
+    }`
+}
+
+const getReconstructLogoPathQuery = (dirs) => reconstructPathHelper("reconstructLogoPath", dirs);
+const getReconstructRecordingPathQuery = (dirs) => reconstructPathHelper("reconstructRecordingPath", dirs);
+const getReconstructExportPathQuery = (dirs) => reconstructPathHelper("reconstructExportPath", dirs);
+
 export function fetchSettings() {
     fetch(settingsQuery).then(promise => {
         Promise.resolve(promise).then(resp => {
@@ -542,4 +582,24 @@ export function fetchDeleteLineup(lineup_name) {
 
 export function fetchUpdateSettings(ledger_path, lineups_dir) {
     return fetch(updateSettingsMutation(ledger_path, lineups_dir));
+}
+
+export function fetchLogoPermissions(sub_dirs) {
+    return fetch(getLogoPermissionsQuery(sub_dirs));
+}
+export function fetchRecordingPermissions(sub_dirs) {
+    return fetch(getRecordingPermissionsQuery(sub_dirs));
+}
+export function fetchExportPermissions(sub_dirs) {
+    return fetch(getExportPermissionsQuery(sub_dirs));
+}
+
+export function fetchReconstructLogoPath(dirs) {
+    return fetch(getReconstructLogoPathQuery(dirs));
+}
+export function fetchReconstructRecordingPath(dirs) {
+    return fetch(getReconstructRecordingPathQuery(dirs));
+}
+export function fetchReconstructExportPath(dirs) {
+    return fetch(getReconstructExportPathQuery(dirs));
 }

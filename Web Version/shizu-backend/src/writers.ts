@@ -1,4 +1,4 @@
-import { join, resolve, basename } from "path";
+import path, { join, resolve, basename } from "path";
 import {
   readdirSync,
   Dirent,
@@ -400,8 +400,8 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
   const djs_data = await Promise.all(dj_promises.map(async dj => {
       return {
         name: dj.name,
-        logo_path: dj.logo_path,
-        recording_path: dj.recording_path,
+        logo_path: resolvePath(dj.logo_path),
+        recording_path: resolvePath(dj.recording_path),
         resolution: await dj.resolution,
         url: dj.url
       }
@@ -409,12 +409,12 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
   const promos_data = await Promise.all(promo_promises.map(async promo => {
     return {
       name: promo.name,
-      path: promo.path,
+      path: resolvePath(promo.path),
       resolution: await promo.resolution
     }
   }));
 
-  const export_path = join(data.export_dir, data.lineup_name + ".json");
+  const export_path = join(path.normalize(data.export_dir), data.lineup_name + ".json");
 
   console.log(`Exporting to ${export_path}`);
 
@@ -429,9 +429,11 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
   return "Done";
 }
 
-function getResolution(path: string): Promise<any> {
+function getResolution(file_path: string): Promise<any> {
+  if (!file_path) return new Promise((resolve, _) => resolve([]));
+  file_path = resolvePath(file_path);
   return new Promise((resolve, reject) => {
-    ffprobe(path, (err, metadata) => {
+    ffprobe(file_path, (err, metadata) => {
       if (err) {
         console.log(err);
         reject();
@@ -443,4 +445,9 @@ function getResolution(path: string): Promise<any> {
       resolve([]);
     });
   });
+}
+
+function resolvePath(file_path: string | undefined) {
+  if (!file_path) return "";
+  return path.normalize(file_path);
 }

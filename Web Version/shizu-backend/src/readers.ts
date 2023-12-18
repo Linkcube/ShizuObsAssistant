@@ -7,7 +7,7 @@ import {
   writeFileSync,
   mkdirSync,
 } from "fs";
-import type { IFileObject, ILedger, ILineup, IPermissions, ISettings, ITheme } from "./types";
+import type { IFileObject, ILedger, ILineup, IPermissions, ISettings, ITheme, IStaticFolderPermission, IStaticPermissions } from "./types";
 const dialog = require("node-file-dialog");
 
 const SETTINGS_FILE = join(resolve("."), "settings.json");
@@ -231,4 +231,78 @@ export const getRecordingPermissions = (data: { sub_dirs: string[]}) => {
 export const getExportPermissions = (data: { sub_dirs: string[]}) => {
   const permissions = getPermissions("export");
   return getFilesForPermission(permissions, data.sub_dirs, true);
+}
+
+export function getStaticPathPermissions() {
+  if (!existsSync(PERMISSIONS_FILE)) {
+    writeFileSync(PERMISSIONS_FILE, JSON.stringify(DEFAULT_PERMISSIONS));
+    if (!existsSync(DEFAULT_PERMISSIONS.logo_dirs[0])) mkdirSync(DEFAULT_PERMISSIONS.logo_dirs[0]);
+    if (!existsSync(DEFAULT_PERMISSIONS.recording_dirs[0])) mkdirSync(DEFAULT_PERMISSIONS.recording_dirs[0]);
+    if (!existsSync(DEFAULT_PERMISSIONS.export_dirs[0])) mkdirSync(DEFAULT_PERMISSIONS.export_dirs[0]);
+  }
+
+  let permissions: IPermissions = JSON.parse(readFileSync(PERMISSIONS_FILE, "utf-8"));
+
+  let logo_dirs = permissions.logo_dirs.map(dir => {
+    let perm: IStaticFolderPermission = {
+      id: path.basename(dir),
+      path: resolve(dir)
+    }
+    
+    return perm;
+  });
+  let recording_dirs = permissions.recording_dirs.map(dir => {
+    let perm: IStaticFolderPermission = {
+      id: path.basename(dir),
+      path: resolve(dir)
+    }
+
+    return perm;
+  });
+  let export_dirs = permissions.export_dirs.map(dir => {
+    let perm: IStaticFolderPermission = {
+      id: path.basename(dir),
+      path: resolve(dir)
+    }
+
+    return perm;
+  });
+
+  let static_permissions: IStaticPermissions = {
+    logos: logo_dirs,
+    recordings: recording_dirs,
+    exports: export_dirs
+  }
+
+  return static_permissions
+}
+
+function reconstructFilePath(top_dirs: string[], segments: string[]) {
+  let top_dirs_map = new Map(top_dirs.map(directory => {
+    return [path.basename(directory), directory]
+  }));
+
+  let top_dir = top_dirs_map.get(segments[0]);
+  if (!top_dir) throw Error("Invalid top directory")
+  let full_path = top_dir
+  if (segments.length > 1) {
+    full_path = path.join(top_dir, ...segments.slice(1));
+  }
+
+  return full_path;
+}
+
+export const reconstructLogoPath = (data: { dirs: string[]}) => {
+  const permissions = getPermissions("logos");
+  return reconstructFilePath(permissions, data.dirs);
+}
+
+export const reconstructRecordingPath = (data: { dirs: string[]}) => {
+  const permissions = getPermissions("recordings");
+  return reconstructFilePath(permissions, data.dirs);
+}
+
+export const reconstructExportPath = (data: { dirs: string[]}) => {
+  const permissions = getPermissions("export");
+  return reconstructFilePath(permissions, data.dirs);
 }

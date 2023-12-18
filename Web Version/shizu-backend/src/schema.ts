@@ -12,6 +12,9 @@ type Query {
     getLogoPermissions(sub_dirs: [String]): fileDialogBlob
     getRecordingPermissions(sub_dirs: [String]): fileDialogBlob
     getExportPermissions(sub_dirs: [String]): fileDialogBlob
+    reconstructLogoPath(dirs: [String]): String
+    reconstructRecordingPath(dirs: [String]): String
+    reconstructExportPath(dirs: [String]): String
 },
 type Mutation {
     addDj(name: String!, logo_path: String, recording_path: String, rtmp_server: String, stream_key: String): ledgerObject

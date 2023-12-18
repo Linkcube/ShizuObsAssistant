@@ -70,3 +70,14 @@ export interface IFileDialogBlob {
   path: string[];
   top_dirs: string[];
 }
+
+export interface IStaticPermissions {
+  logos: IStaticFolderPermission[],
+  recordings: IStaticFolderPermission[],
+  exports: IStaticFolderPermission[]
+}
+
+export interface IStaticFolderPermission {
+  id: string,
+  path: string
+}

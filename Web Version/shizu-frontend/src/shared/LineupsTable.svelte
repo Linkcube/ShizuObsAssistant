@@ -10,7 +10,10 @@
 
         fetchDeleteLineup,
 
-        fetchLineups
+        fetchLineups,
+
+        EXPORT_TYPE
+
 
 
     } from '$lib/store';
@@ -28,6 +31,7 @@
     import NewMatTableRow from './NewMatTableRow.svelte';
     import {flip} from 'svelte/animate';
     import NewMatTable from './NewMatTable.svelte';
+    import FileDialog from './FileDialog.svelte';
 
     let lineups_data = []
     let display_lineups = []
@@ -52,6 +56,7 @@
     let loading = true;
 
     let selecting_export_dir = false;
+    let show_export_dialog = false;
 
     lineups.subscribe(value => {
         lineups_data = value;
@@ -155,18 +160,13 @@
     }
 
     function exportLineup() {
-        if (selecting_export_dir) return;
+        show_export_dialog = true;
+    }
 
-        selecting_export_dir = true;
-        fetchGetDirPath().then(promise => {
-            Promise.resolve(promise).then(response => {
-            if (response.hasOwnProperty('data')) {
-                selecting_export_dir = false;
-                fetchExportLineup(current_lineup, response.data.getDirPath);
-            }
-        }).catch(() => console.log("Dialog closed"))
-            .finally(() => selecting_export_dir = false);
-        })
+    function exportSelected(event) {
+        if (event.detail) {
+            fetchExportLineup(current_lineup, event.detail);
+        }
     }
 
     function deleteLineup() {
@@ -267,6 +267,9 @@
         on:close={() => show_edit_promo = false}
     />
 {/if}
+{#if show_export_dialog}
+    <FileDialog file_type={EXPORT_TYPE} on:close={() => show_export_dialog = false} on:submission={exportSelected}/>
+{/if}
 
 <div class="flex-column">
     <div class="flex-row">
@@ -332,7 +335,7 @@
                         <NewMatTableRow
                             values={[`${index + 1}`, item.name]}
                             type="click row draggable"
-                            on:click={() => editPromo(index, item)}
+                            on:click={() => editPromo(index, item.name)}
                             on:dragstart={() => handleDragStart(index)}
                             on:dragover={() => handleDragOver(index)}
                             on:dragend={() => handlePromoDragEnd()}
