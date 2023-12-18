@@ -109,12 +109,12 @@
     }
 
 	.cancel {
-		--primary-text-color: var(--button-text-color, red);
-		--secondary-color: var(--button-background-color, rgb(253, 229, 232));
+		--primary-text-color: var(--cancel-text-color, red);
+		--secondary-color: var(--secondary-color, rgb(253, 229, 232));
 	}
 
 	.submit {
-		--primary-text-color: var(--button-text-color, blue);
-		--secondary-color: var(--button-background-color, rgb(235, 246, 250));
+		--primary-text-color: var(--primary-color, blue);
+		--secondary-color: var(--secondary-color, rgb(235, 246, 250));
 	}
 </style>

@@ -7,7 +7,14 @@ import {
   getLineups,
   getSettings,
   getFilePath,
-  getDirPath
+  getDirPath,
+  getLogoPermissions,
+  getRecordingPermissions,
+  getExportPermissions,
+  getStaticPathPermissions,
+  reconstructLogoPath,
+  reconstructRecordingPath,
+  reconstructExportPath
 } from "./readers";
 import {
   addDj,
@@ -37,6 +44,12 @@ const root = {
   getSettings,
   getFilePath,
   getDirPath,
+  getLogoPermissions,
+  getRecordingPermissions,
+  getExportPermissions,
+  reconstructLogoPath,
+  reconstructRecordingPath,
+  reconstructExportPath,
   addDj,
   addPromo,
   updateDj,
@@ -65,6 +78,19 @@ app.use(
   }),
 );
 
+// Static permissions dirs
+let static_permissions = getStaticPathPermissions();
+static_permissions.logos.map(permission => {
+  app.use(`/logos/${encodeURIComponent(permission.id)}`, express.static(permission.path));
+});
+static_permissions.recordings.map(permission => {
+  app.use(`/recordings/${encodeURIComponent(permission.id)}`, express.static(permission.path));
+});
+static_permissions.exports.map(permission => {
+  app.use(`/exports/${encodeURIComponent(permission.id)}`, express.static(permission.path));
+});
+
+// Listen for graphql
 app.listen(4004, () => {
   console.log("Express GraphQL Server Now Running On localhost:4004/graphql");
 });

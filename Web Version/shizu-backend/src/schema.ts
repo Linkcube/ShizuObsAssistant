@@ -9,6 +9,12 @@ type Query {
     getSettings: settingsObject
     getFilePath: [String]
     getDirPath: String
+    getLogoPermissions(sub_dirs: [String]): fileDialogBlob
+    getRecordingPermissions(sub_dirs: [String]): fileDialogBlob
+    getExportPermissions(sub_dirs: [String]): fileDialogBlob
+    reconstructLogoPath(dirs: [String]): String
+    reconstructRecordingPath(dirs: [String]): String
+    reconstructExportPath(dirs: [String]): String
 },
 type Mutation {
     addDj(name: String!, logo_path: String, recording_path: String, rtmp_server: String, stream_key: String): ledgerObject
@@ -73,6 +79,15 @@ type settingsObject {
     ledger_path: String,
     lineups_dir: String,
     theme_index: Int
+}
+type fileDialogBlob {
+    files: [fileBlob],
+    path: [String],
+    top_dirs: [String]
+}
+type fileBlob {
+    name: String,
+    is_dir: Boolean
 }
 input lineupDjObjectInput {
     name: String,

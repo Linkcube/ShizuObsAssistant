@@ -106,5 +106,8 @@
             </div>
             <p>Ledger Directory: {lineups_dir_name}</p>
         </div>
+        <div class="row">
+            <p>This uses a legacy file selection, on certain systems the dialog may appear behind other windows.</p>
+        </div>
     </div>
 </Modal>

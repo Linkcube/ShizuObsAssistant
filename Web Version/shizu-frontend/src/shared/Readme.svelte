@@ -57,5 +57,8 @@
         <div class="row text">
             <span>There is also a menu option to change the web-app's styling, feel free to mess around with it.</span>
         </div>
+        <div class="row text">
+            <span>File selection has been changed! For logos/recordings/exporting, you now can configure specific directories to be available by modifying permissions.json. </span>
+        </div>
     </div>
 </Modal>

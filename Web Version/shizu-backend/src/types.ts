@@ -53,3 +53,31 @@ export interface IThemeStyle {
   submitTextColor: string;
   submitBackgroundColor: string;
 }
+
+export interface IPermissions {
+  logo_dirs: string[];
+  recording_dirs: string[];
+  export_dirs: string[];
+}
+
+export interface IFileObject {
+  name: string;
+  is_dir: boolean;
+}
+
+export interface IFileDialogBlob {
+  files: IFileObject[];
+  path: string[];
+  top_dirs: string[];
+}
+
+export interface IStaticPermissions {
+  logos: IStaticFolderPermission[],
+  recordings: IStaticFolderPermission[],
+  exports: IStaticFolderPermission[]
+}
+
+export interface IStaticFolderPermission {
+  id: string,
+  path: string
+}

@@ -25,6 +25,11 @@
         --highlight-color: var(--highlight-color);
         --focus-color: var(--focus-color);
         --active-color: var(--active-color);
+        --delete-color: var(--delete-color);
+        --cancel-text-color: var(--cancel-text-color);
+        --cancel-background-color: var(--cancel-background-color);
+        --submit-text-color: var(--submit-text-color);
+        --submit-background-color: var(--submit-background-color);
         height: 100%;
         width: 100%;
         margin: 0;

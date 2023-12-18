@@ -16,12 +16,17 @@
         lineups,
         fetchAddDjToLineup,
         fetchLineup,
+        toFileName,
 
-        toFileName
+        RECORDING_TYPE,
+
+        LOGO_TYPE
+
 
     } from '$lib/store.js';
     import { createEventDispatcher } from 'svelte';
     import { get } from 'svelte/store';
+    import FileDialog from './FileDialog.svelte';
 
     export let index = -1;
     export let name = "";
@@ -36,6 +41,8 @@
     const current_lineup = get(currentLineup);
     const lineup_names = get(lineups);
     let target_lineup = lineup_names[0];
+    let show_logo_dialog = false;
+    let show_recording_dialog = false;
 
 
     const dispatch = createEventDispatcher();
@@ -64,33 +71,27 @@
     }
 
     function selectLogo() {
-        if (selecting_file) return;
+        show_logo_dialog = true;
+    }
 
-        selecting_file = true;
-        fetchGetFilePath().then(promise => {
-            Promise.resolve(promise).then(response => {
-                if (response.hasOwnProperty('data')) {
-                    logo_name = response.data.getFilePath[0];
-                    logo_path = response.data.getFilePath[1];
-                }
-            }).catch(() => console.log("Dialog closed"))
-            .finally(() => selecting_file = false)
-        });
+    function updateLogo(event) {
+        if (event.detail) {
+            let full_path = event.detail;
+            logo_name = toFileName(full_path);
+            logo_path = full_path;
+        }
     }
 
     function selectRecording() {
-        if (selecting_file) return;
+        show_recording_dialog = true;
+    }
 
-        selecting_file = true;
-        fetchGetFilePath().then(promise => {
-            Promise.resolve(promise).then(response => {
-                if (response.hasOwnProperty('data')) {
-                    recording_name = response.data.getFilePath[0];
-                    recording_path = response.data.getFilePath[1];
-                }
-            }).catch(() => console.log("Dialog closed"))
-            .finally(() => selecting_file = false)
-        });
+    function updateRecording(event) {
+        if (event.detail) {
+            let full_path = event.detail;
+            recording_name = toFileName(full_path);
+            recording_path = full_path;
+        }
     }
 
     function removeDj() {
@@ -130,6 +131,11 @@
     }
 </style>
 
+{#if show_logo_dialog}
+    <FileDialog file_type={LOGO_TYPE} on:close={() => show_logo_dialog = false} on:submission={updateLogo}/>
+{:else if show_recording_dialog}
+    <FileDialog file_type={RECORDING_TYPE} on:close={() => show_recording_dialog = false} on:submission={updateRecording}/>
+{:else}
 <Modal on:close={close} on:submission={saveDj}>
     <div class="central-column">
         <div class="row">
@@ -157,7 +163,7 @@
         </div>
         <div class="row">
             <div class="icon-container">
-                <IconButton icon="photo" title="Select Recording" on:click={selectRecording} />
+                <IconButton icon="video_file" title="Select Recording" on:click={selectRecording} />
             </div>
             <!-- <MaterialButton value="Select Recording" on:click={selectRecording} /> -->
             <p>Recording: {recording_name ? recording_name : "Not Set"}</p>
@@ -176,3 +182,4 @@
         {/if}
     </div>
 </Modal>
+{/if}
