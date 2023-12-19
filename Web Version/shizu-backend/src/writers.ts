@@ -438,9 +438,11 @@ function getResolution(file_path: string): Promise<any> {
         console.log(err);
         reject();
       }
-      const video_stream = metadata.streams.filter(stream => stream.codec_type === "video");
-      if (video_stream) {
-        resolve(video_stream.map(stream => [stream.width, stream.height])[0]);
+      if (metadata.streams) {
+        const video_stream = metadata.streams.filter(stream => stream.codec_type === "video");
+        if (video_stream) {
+          resolve(video_stream.map(stream => [stream.width, stream.height])[0]);
+        }
       }
       resolve([]);
     });

@@ -308,7 +308,6 @@ re<script>
         border-top: 1px solid var(--secondary-text-color, gray);
         justify-content: flex-start;
         cursor: pointer;
-        overflow-y: scroll;
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
         user-select: none; /* Standard syntax */

@@ -232,7 +232,7 @@ export const getRecordingPermissions = (data: { sub_dirs: string[]}) => {
   const permissions = getPermissions("recordings");
   let retval =  getFilesForPermission(permissions, data.sub_dirs, false);
   retval.files = retval.files.filter(file => {
-    return [".mkv", ".webm", ".avi", ".mov", ".mp4"].includes(path.extname(file.name)) || file.is_dir
+    return [".mkv", ".webm", ".avi", ".mov", ".mp4", ".mp3", ".wav", ".flac"].includes(path.extname(file.name)) || file.is_dir
   });
 
   return retval;
