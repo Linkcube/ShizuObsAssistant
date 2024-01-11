@@ -1,6 +1,6 @@
 re<script>
 	import { createEventDispatcher, onDestroy } from 'svelte';
-	import { MaterialButton, IconButton } from 'linkcube-svelte-components';
+	import { MaterialButton, MaterialInput } from 'linkcube-svelte-components';
     import {
         LOGO_TYPE,
         RECORDING_TYPE,
@@ -14,7 +14,6 @@ re<script>
         fetchReconstructExportPath
     } from '$lib/store';
 	
-	export let use_submission = true;
     export let file_type = LOGO_TYPE;
 
 	const dispatch = createEventDispatcher();
@@ -28,11 +27,16 @@ re<script>
     let current_path = [];
     let current_files = [];
     let top_level_dirs = [];
+    let display_files = [];
 
 	/**
      * @type {HTMLDivElement}
      */
 	let modal;
+
+    let sort_direction = false;
+    let sort_type = "name";
+    let search_value = "";
 
 	const handle_keydown = e => {
 		if (e.key === 'Escape') {
@@ -70,6 +74,7 @@ re<script>
                 if (res.hasOwnProperty("data")) {
                     let file_blob = res.data.getLogoPermissions;
                     current_files = file_blob.files;
+                    display_files = current_files;
                     current_path = file_blob.path;
                     top_level_dirs = file_blob.top_dirs;
                 }
@@ -80,6 +85,7 @@ re<script>
                 if (res.hasOwnProperty("data")) {
                     let file_blob = res.data.getRecordingPermissions;
                     current_files = file_blob.files;
+                    display_files = current_files;
                     current_path = file_blob.path;
                     top_level_dirs = file_blob.top_dirs;
                 }
@@ -90,11 +96,14 @@ re<script>
                 if (res.hasOwnProperty("data")) {
                     let file_blob = res.data.getExportPermissions;
                     current_files = file_blob.files;
+                    display_files = current_files;
                     current_path = file_blob.path;
                     top_level_dirs = file_blob.top_dirs;
                 }
             })
         }
+        sort_direction = false;
+        sort_type = "name";
     }
 
     function selectTopDir(dir) {
@@ -162,6 +171,39 @@ re<script>
                     close();
                 }
             })
+        }
+    }
+
+    function compareBy(field, direction) {
+        switch(field) {
+            case "name":
+                if (direction) return (a, b) => a.name.localeCompare(b.name) * -1;
+                return (a, b) => a.name.localeCompare(b.name);
+            case "type":
+                if (direction) return (a, b) => a.is_dir < b.is_dir;
+                return (a, b) => a.is_dir > b.is_dir;
+        }
+    }
+
+    function sortByName() {
+        if (sort_type != "name") sort_direction = false;
+        display_files = display_files.sort(compareBy("name", sort_direction));
+        sort_direction = !sort_direction;
+        sort_type = "name";
+    }
+
+    function sortByType() {
+        if (sort_type != "type") sort_direction = false;
+        display_files = display_files.sort(compareBy("type", sort_direction));
+        sort_direction = !sort_direction;
+        sort_type = "type";
+    }
+
+    const enterSearch = () => {
+        if (search_value === "") {
+            display_files = current_files;
+        } else {
+            display_files = current_files.filter(file => file.name.toUpperCase().includes(search_value.toUpperCase()));
         }
     }
 
@@ -269,13 +311,24 @@ re<script>
     }
 
     .nav-header {
-        height: 40px;
+        height: 60px;
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
+    }
+
+    .nav-header-sort {
+        cursor: pointer;
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10 and IE 11 */
+        user-select: none; /* Standard syntax */
+        margin-top: auto;
+        margin-bottom: auto;
     }
 
     .file-selection {
         width: 100%;
+        overflow-y: scroll;
+        height: 700px;
     }
 
     .main {
@@ -295,8 +348,6 @@ re<script>
 
     .body {
         flex-grow: 1;
-        overflow-y: scroll;
-        height: 700px;
     }
 
     .preview {
@@ -361,9 +412,18 @@ re<script>
         </div>
         <div class="body column">
             <div class="nav-header row">
+                <div class="nav-header-sort" on:click={sortByName}>
+                    <span>Name</span>
+                    <span class="material-icons">swap_vert</span>
+                </div>
+                <div class="nav-header-sort" on:click={sortByType}>
+                    <span>Type</span>
+                    <span class="material-icons">swap_vert</span>
+                </div>
+                <MaterialInput label="Search Files" bind:value={search_value} on:blur={enterSearch} on:enter={enterSearch}/>
             </div>
             <div class="file-selection column">
-                {#each current_files as file}
+                {#each display_files as file}
                     <span class="row file-selection-row" on:click={() => selectFileItem(file.name, file.is_dir)}>
                         <span class="material-icons large-icon file-selection-icon">
                             {#if file.is_dir}
