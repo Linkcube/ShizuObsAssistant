@@ -1,4 +1,4 @@
-import * as express_graphql from "express-graphql";
+import { createHandler } from 'graphql-http/lib/use/express';
 import { SCHEMA } from "./schema";
 import {
   getLedger,
@@ -85,8 +85,7 @@ const app = express();
 app.use(cors()); // For graphql over http
 app.use(
   "/graphql",
-  express_graphql.graphqlHTTP({
-    graphiql: true,
+  createHandler({
     rootValue: root,
     schema: SCHEMA,
   }),
