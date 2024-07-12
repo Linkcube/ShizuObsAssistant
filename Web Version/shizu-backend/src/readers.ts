@@ -9,6 +9,7 @@ import {
 } from "fs";
 import type { IFileObject, ILedger, ILineup, IPermissions, ISettings, ITheme, IStaticFolderPermission, IStaticPermissions } from "./types";
 const dialog = require("node-file-dialog");
+import { LineupNotFoundError } from "./errors";
 
 const SETTINGS_FILE = join(resolve("."), "settings.json");
 const APP_THEMES_FILE = join(resolve("."), "themes.json");
@@ -48,9 +49,9 @@ export const getLineup = (data: { name: string }) => {
     JSON.parse(readFileSync(SETTINGS_FILE, "utf-8")).lineups_dir,
     data.name + ".json",
   );
-  // Err on this
+
   if (!existsSync(path)) {
-    return {};
+    return new LineupNotFoundError(`Could not find lineup ${data.name}.`);
   }
 
   const file_contents: ILineup = JSON.parse(readFileSync(path, "utf-8"));

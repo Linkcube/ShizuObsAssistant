@@ -18,11 +18,61 @@ import type {
   ISettings,
   ITheme,
   IThemeStyle,
+  IPermissions,
 } from "./types";
 import { FfprobeData, ffprobe } from "fluent-ffmpeg";
+import { 
+  InvalidFileError,
+  InvalidDjError,
+  InvalidPromoError,
+  InvalidLineupError,
+  DjNotFoundError,
+  PromoNotFoundError,
+  LineupNotFoundError
+} from "./errors";
 
 const SETTINGS_FILE = join(resolve("."), "settings.json");
 const APP_THEMES_FILE = join(resolve("."), "themes.json");
+const PERMISSIONS_FILE = join(resolve("."), "permissions.json")
+
+function validate_file_path(file_path: string, root_dirs: string[]) {
+  var valid_path = false;
+
+  root_dirs.forEach((root) => {
+    const relative = path.relative(root, file_path);
+    const isSubdir = relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+    if (isSubdir) {
+      console.log("Valid path found!");
+      valid_path = true;
+    }
+  });
+
+  return valid_path;
+}
+
+function validate_logo(logo_path: string) {
+  const permissions: IPermissions = JSON.parse(readFileSync(PERMISSIONS_FILE, "utf-8"));
+
+  if (!validate_file_path(logo_path, permissions.logo_dirs)) {
+    throw new InvalidFileError("Supplied logo path is not permitted.")
+  }
+}
+
+function validate_recording(recording_path: string) {
+  const permissions: IPermissions = JSON.parse(readFileSync(PERMISSIONS_FILE, "utf-8"));
+
+  if (!validate_file_path(recording_path, permissions.recording_dirs)) {
+    throw new InvalidFileError("Supplied recording path is not permitted.")
+  }
+}
+
+function validate_export(export_path: string) {
+  const permissions: IPermissions = JSON.parse(readFileSync(PERMISSIONS_FILE, "utf-8"));
+
+  if (!validate_file_path(export_path, permissions.export_dirs)) {
+    throw new InvalidFileError("Supplied export path is not permitted.")
+  }
+}
 
 export const addDj = (data: {
   name: string;
@@ -41,7 +91,14 @@ export const addDj = (data: {
       return dj.name === data.name;
     })
   ) {
-    return "DJ already exists";
+    return new InvalidDjError(`DJ ${data.name} already exists`);
+  }
+
+  try {
+    if (data.logo_path) validate_logo(data.logo_path);
+    if (data.recording_path) validate_recording(data.recording_path);
+  } catch (error) {
+    return error;
   }
 
   const new_dj: IDj = {
@@ -67,7 +124,13 @@ export const addPromo = (data: { name: string; path: string }) => {
       return promo.name === data.name;
     })
   ) {
-    return "Promo already exists";
+    return new InvalidPromoError(`Promo ${data.name} already exists`);
+  }
+
+  try {
+    if (data.path) validate_recording(data.path);
+  } catch (error) {
+    return error;
   }
 
   const new_promo: IPromo = {
@@ -92,7 +155,18 @@ export const updateDj = (data: {
   ).ledger_path;
   const ledger_data: ILedger = JSON.parse(readFileSync(ledger_path, "utf-8"));
 
+  if (data.index < 1 || data.index >= ledger_data.djs.length) {
+    return new DjNotFoundError(`No entry exists for DJ ${data.name} at index ${data.index}.`);
+  }
+
   const dj: IDj = ledger_data.djs[data.index];
+
+  try {
+    if (data.logo_path) validate_logo(data.logo_path);
+    if (data.recording_path) validate_recording(data.recording_path);
+  } catch (error) {
+    return error;
+  }
 
   if (data.name) dj.name = data.name;
   if (data.logo_path) dj.logo_path = data.logo_path;
@@ -115,6 +189,16 @@ export const updatePromo = (data: {
   ).ledger_path;
   const ledger_data: ILedger = JSON.parse(readFileSync(ledger_path, "utf-8"));
 
+  if (data.index < 1 || data.index >= ledger_data.promos.length) {
+    return new PromoNotFoundError(`No entry exists for Promo ${data.name} at index ${data.index}.`);
+  }
+
+  try {
+    if (data.path) validate_recording(data.path);
+  } catch (error) {
+    return error;
+  }
+
   const promo: IPromo = ledger_data.promos[data.index];
 
   if (data.name) promo.name = data.name;
@@ -131,7 +215,7 @@ export const createLineup = (data: { name: string }) => {
     data.name + ".json",
   );
   if (existsSync(lineup_path)) {
-    return "Lineup already exists";
+    return new InvalidLineupError("Lineup already exists");
   }
 
   writeFileSync(
@@ -155,8 +239,10 @@ export const updateLineup = (data: {
     data.name + ".json",
   );
   if (!existsSync(lineup_path)) {
-    return "Could not find lineup";
+    return new LineupNotFoundError(`Could not find Lineup: ${data.name}.`);
   }
+
+  // TODO: validate djs and promos
 
   writeFileSync(
     lineup_path,
@@ -345,19 +431,37 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
     settings.lineups_dir,
     data.lineup_name + ".json",
   );
-  // Err on this
+
+  const export_path = join(path.normalize(data.export_dir), data.lineup_name + ".json");
+
+  try {
+    validate_export(export_path);
+  } catch (error) {
+    return error;
+  }
+
   if (!existsSync(lineup_path)) {
-    return {};
+    return new LineupNotFoundError(`Could not find Lineup: ${data.lineup_name}.`);
   }
 
   const lineup_contents: ILineup = JSON.parse(readFileSync(lineup_path, "utf-8"));
 
   const ledger_dj_map = new Map(ledger_contents.djs.map(dj => [dj.name, dj]));
   const ledger_promo_map = new Map(ledger_contents.promos.map(promo => [promo.name, promo]));
+
+  const missing_djs: string[] = [];
+  lineup_contents.djs.forEach((dj) => {
+    if (ledger_dj_map.get(dj.name) === undefined) {
+      missing_djs.push(dj.name);
+    }
+  });
+  if (missing_djs.length > 0) {
+    return new DjNotFoundError(`Could not find DJs: ${missing_djs.toString()}.`);
+  }
+
   const dj_promises = lineup_contents.djs.map(dj => {
     let dj_data = ledger_dj_map.get(dj.name);
-    if (dj_data === undefined) {
-      console.log(`Could not find ${dj.name}`);
+    if (!dj_data) {
       throw Error();
     }
     let export_data = {
@@ -378,10 +482,20 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
     }
     return export_data;
   });
+
+  const missing_promos: string[] = [];
+  lineup_contents.promos.forEach((promo) => {
+    if (ledger_promo_map.get(promo) === undefined) {
+      missing_promos.push(promo);
+    }
+  });
+  if (missing_promos.length > 0) {
+    return new PromoNotFoundError(`Could not find Promos: ${missing_promos.toString()}.`);
+  }
+  
   const promo_promises = lineup_contents.promos.map(promo => {
     let promo_data = ledger_promo_map.get(promo);
     if (!promo_data) {
-      console.log(`Could not find ${promo}`);
       throw Error();
     }
     let export_data = {
@@ -413,8 +527,6 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
       resolution: await promo.resolution
     }
   }));
-
-  const export_path = join(path.normalize(data.export_dir), data.lineup_name + ".json");
 
   console.log(`Exporting to ${export_path}`);
 
