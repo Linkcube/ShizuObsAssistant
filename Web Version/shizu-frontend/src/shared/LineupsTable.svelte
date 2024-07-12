@@ -7,23 +7,16 @@
         updateLineupHelper,
         fetchGetDirPath,
         fetchExportLineup,
-
         fetchDeleteLineup,
-
         fetchLineups,
-
-        EXPORT_TYPE
-
-
-
+        EXPORT_TYPE,
+        error_stack
     } from '$lib/store';
     import {
         MaterialTable,
         MaterialTableRow,
 		IconButton,
-
         MaterialInput
-
     } from 'linkcube-svelte-components';
     import AddLineupModal from '../shared/AddLineupModal.svelte';
     import DjLineupModal from '../shared/DjLineupModal.svelte';
@@ -32,6 +25,8 @@
     import {flip} from 'svelte/animate';
     import NewMatTable from './NewMatTable.svelte';
     import FileDialog from './FileDialog.svelte';
+    import ErrorPopup from './ErrorPopup.svelte';
+    import ErrorMessage from './ErrorMessage.svelte';
 
     let lineups_data = []
     let display_lineups = []
@@ -57,6 +52,11 @@
 
     let selecting_export_dir = false;
     let show_export_dialog = false;
+    let show_export_error = false;
+    let current_error = null;
+
+    error_stack.subscribe(error => current_error = error);
+    const close_error = () => show_export_error = false;
 
     lineups.subscribe(value => {
         lineups_data = value;
@@ -161,11 +161,14 @@
 
     function exportLineup() {
         show_export_dialog = true;
+        show_export_error = true;
     }
 
     function exportSelected(event) {
         if (event.detail) {
-            fetchExportLineup(current_lineup, event.detail);
+            fetchExportLineup(current_lineup, event.detail).then(response => {
+                if (response) show_export_error = false;
+            });
         }
     }
 
@@ -247,6 +250,9 @@
     }
 </style>
 
+{#if current_error && show_export_error}
+    <ErrorPopup error={current_error} header="Export Failed" on:close={close_error} />
+{/if}
 {#if show_add_lineup}
     <AddLineupModal on:close={() => show_add_lineup = false} />
 {/if}

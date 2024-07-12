@@ -17,16 +17,14 @@
         fetchAddDjToLineup,
         fetchLineup,
         toFileName,
-
         RECORDING_TYPE,
-
-        LOGO_TYPE
-
-
+        LOGO_TYPE,
+        error_stack
     } from '$lib/store.js';
     import { createEventDispatcher } from 'svelte';
     import { get } from 'svelte/store';
     import FileDialog from './FileDialog.svelte';
+    import ErrorMessage from './ErrorMessage.svelte';
 
     export let index = -1;
     export let name = "";
@@ -43,10 +41,13 @@
     let target_lineup = lineup_names[0];
     let show_logo_dialog = false;
     let show_recording_dialog = false;
+    let current_error = null;
 
 
     const dispatch = createEventDispatcher();
     const close = () => dispatch('close');
+
+    error_stack.subscribe(error => current_error = error);
 
     function saveDj() {
         if (index < 0) {
@@ -179,6 +180,9 @@
                     </MaterialSelect>
                 {/if}
             </div>
+        {/if}
+        {#if current_error}
+            <ErrorMessage error={current_error} />
         {/if}
     </div>
 </Modal>

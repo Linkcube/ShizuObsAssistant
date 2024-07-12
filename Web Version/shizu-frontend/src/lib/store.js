@@ -11,6 +11,7 @@ export const currentLineupObjects = writable({});
 export const currentThemeIndex = writable(0);
 export const currentTheme = writable({});
 export const themes = writable([]);
+export const error_stack = writable(null);
 
 export const graphqlBase = `${location.protocol}//${window.location.hostname}:4004`;
 const graphqlUrl = `${graphqlBase}/graphql`;
@@ -304,6 +305,22 @@ mutation {
     )
 }`
 
+const addDjToLineupMutation = (lineup_name, dj_name) => `
+mutation {
+    addDjToLineup(
+        lineup_name: "${lineup_name}",
+        dj_name: "${dj_name}"
+    )
+}`
+
+const addPromoToLineupMutation = (lineup_name, promo_name) => `
+mutation {
+    addPromoToLineup(
+        lineup_name: "${lineup_name}",
+        promo_name: "${promo_name}"
+    )
+}`
+
 const exportLineupMutation = (lineup_name, dir) => `
 mutation {
     exportLineup(lineup_name: "${lineup_name}", export_dir: "${dir}")
@@ -344,6 +361,10 @@ const reconstructPathHelper = (query_head, dirs) => {
     query {
         ${query_head}(dirs: [${dirs_string}])
     }`
+}
+
+const errorStackPushHelper = (error) => {
+    error_stack.set(error);
 }
 
 const getReconstructLogoPathQuery = (dirs) => reconstructPathHelper("reconstructLogoPath", dirs);
@@ -420,6 +441,9 @@ export function fetchAddDj(name, logo_path, recording_path, rtmp_server, stream_
 export function fetchUpdateDj(index, name, logo_path, recording_path, rtmp_server, stream_key) {
     fetch(updateDjMutation(index, name, logo_path, recording_path, rtmp_server, stream_key)).then(promise => {
         Promise.resolve(promise).then(response => {
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
+            }
 			if (response.hasOwnProperty("data")) {
 				ledger.set(response.data.updateDj);
 			}
@@ -472,21 +496,12 @@ export function updateLineupHelper(lineup_name, dj_objects, promos) {
 }
 
 export function fetchAddDjToLineup(lineup_name, dj_name) {
-    return fetch(getLineup(lineup_name)).then(promise => {
+    return fetch(addDjToLineupMutation(lineup_name, dj_name)).then(promise => {
         Promise.resolve(promise).then(response => {
-			if (response.hasOwnProperty("data")) {
-				let lineup_data = response.data.getLineup;
-                if (lineup_data.djs.map(dj => dj.name).includes(dj_name)) {
-                    console.log("DJ already in lineup!!");
-                    return;
-                }
-                lineup_data.djs.push({
-                    name: dj_name,
-                    is_live: false
-                });
-                return updateLineupHelper(lineup_name, lineup_data.djs, lineup_data.promos);
-			}
-		})
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
+            }
+		});
     });
 }
 
@@ -546,18 +561,12 @@ export function fetchDeletePromo(index) {
 }
 
 export function fetchAddPromoToLineup(lineup_name, promo_name) {
-    return fetch(getLineup(lineup_name)).then(promise => {
+    return fetch(addPromoToLineupMutation(lineup_name, promo_name)).then(promise => {
         Promise.resolve(promise).then(response => {
-			if (response.hasOwnProperty("data")) {
-				let lineup_data = response.data.getLineup;
-                if (lineup_data.promos.includes(promo_name)) {
-                    console.log("Promo already in lineup!!");
-                    return;
-                }
-                lineup_data.promos.push(promo_name);
-                return updateLineupHelper(lineup_name, lineup_data.djs, lineup_data.promos);
-			}
-		})
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
+            }
+		});
     });
 }
 
@@ -574,7 +583,16 @@ export function fetchRemoveLineupPromo(lineup_name, index) {
 }
 
 export function fetchExportLineup(lineup_name, dir) {
-    return fetch(exportLineupMutation(lineup_name, dir));
+    return fetch(exportLineupMutation(lineup_name, dir)).then(promise => {
+        return Promise.resolve(promise).then(response => {
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
+                return Promise.resolve(false);
+            } else {
+                return Promise.resolve(true);
+            }
+		});
+    });
 }
 
 export function fetchDeleteLineup(lineup_name) {

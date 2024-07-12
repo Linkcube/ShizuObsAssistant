@@ -19,6 +19,8 @@ import type {
   ITheme,
   IThemeStyle,
   IPermissions,
+  IExportDjineupData,
+  IExportPromoLineupData
 } from "./types";
 import { FfprobeData, ffprobe } from "fluent-ffmpeg";
 import { 
@@ -30,6 +32,9 @@ import {
   PromoNotFoundError,
   LineupNotFoundError
 } from "./errors";
+import {
+  getLineup
+} from "./readers";
 
 const SETTINGS_FILE = join(resolve("."), "settings.json");
 const APP_THEMES_FILE = join(resolve("."), "themes.json");
@@ -228,6 +233,67 @@ export const createLineup = (data: { name: string }) => {
 
   return "Done";
 };
+
+export const addDjToLineup = (data: {
+  lineup_name: string,
+  dj_name: string
+}) => {
+  // Validation requires a DB overhaul
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  if (lineup.djs.map(dj => dj.name).includes(data.dj_name)) {
+    return new InvalidDjError(`Lineup ${data.lineup_name} already contains DJ ${data.dj_name}.`);
+  }
+
+  lineup.djs.push({
+    name: data.dj_name,
+    is_live: false
+  })
+
+  const lineup_path = join(
+    JSON.parse(readFileSync(SETTINGS_FILE, "utf-8")).lineups_dir,
+    data.lineup_name + ".json",
+  );
+  writeFileSync(
+    lineup_path,
+    JSON.stringify({
+      djs: lineup.djs,
+      promos: lineup.promos,
+    }),
+  );
+
+  return "Done";
+}
+
+export const addPromoToLineup = (data: {
+  lineup_name: string,
+  promo_name: string
+}) => {
+  // Validation requires a DB overhaul
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  if (lineup.promos.includes(data.promo_name)) {
+    return new InvalidPromoError(`Lineup ${data.lineup_name} already contains Promo ${data.promo_name}.`);
+  }
+
+  lineup.promos.push(data.promo_name);
+
+  const lineup_path = join(
+    JSON.parse(readFileSync(SETTINGS_FILE, "utf-8")).lineups_dir,
+    data.lineup_name + ".json",
+  );
+  writeFileSync(
+    lineup_path,
+    JSON.stringify({
+      djs: lineup.djs,
+      promos: lineup.promos,
+    }),
+  );
+
+  return "Done";
+}
 
 export const updateLineup = (data: {
   name: string;
@@ -464,11 +530,11 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
     if (!dj_data) {
       throw Error();
     }
-    let export_data = {
+    let export_data: IExportDjineupData = {
       name: dj.name,
       logo_path: "",
       recording_path: "",
-      resolution: Promise.resolve(),
+      resolution: Promise.resolve([]),
       url: ""
     };
     export_data.logo_path = dj_data.logo_path ? dj_data.logo_path : "";
@@ -498,10 +564,10 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
     if (!promo_data) {
       throw Error();
     }
-    let export_data = {
+    let export_data: IExportPromoLineupData = {
       name: promo,
       path: "",
-      resolution: Promise.resolve()
+      resolution: Promise.resolve([])
     }
     if (promo_data.path) {
       export_data.path = promo_data.path;
@@ -528,6 +594,19 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
     }
   }));
 
+  const ffmpeg_errors: string[] = [];
+  djs_data.forEach((dj) => {
+    if (dj.resolution instanceof Error) {
+      ffmpeg_errors.push(`DJ ${dj.name}, ${dj.resolution.message}`);
+    }
+  });
+  promos_data.forEach((promo) => {
+    if (promo.resolution instanceof Error) {
+      ffmpeg_errors.push(`Promo ${promo.name}, ${promo.resolution.message}`);
+    }
+  });
+  if (ffmpeg_errors.length > 0) return new InvalidFileError(ffmpeg_errors.toString());
+
   console.log(`Exporting to ${export_path}`);
 
   writeFileSync(
@@ -541,19 +620,19 @@ export const exportLineup = async (data: { lineup_name: string, export_dir: stri
   return "Done";
 }
 
-function getResolution(file_path: string): Promise<any> {
+function getResolution(file_path: string): Promise<number[] | Error> {
   if (!file_path) return new Promise((resolve, _) => resolve([]));
   file_path = resolvePath(file_path);
   return new Promise((resolve, reject) => {
     ffprobe(file_path, (err, metadata) => {
       if (err) {
         console.log(err);
-        reject();
+        resolve(new Error(`Invalid file selected for ${file_path}.`));
       }
       if (metadata && metadata.streams) {
         const video_stream = metadata.streams.filter(stream => stream.codec_type === "video");
         if (video_stream) {
-          resolve(video_stream.map(stream => [stream.width, stream.height])[0]);
+          resolve(video_stream.map(stream => [stream.width!, stream.height!])[0]);
         }
       }
       resolve([]);

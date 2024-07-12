@@ -16,12 +16,13 @@
         fetchUpdatePromo,
         fetchDeletePromo,
         fetchAddPromoToLineup,
-        RECORDING_TYPE
-
+        RECORDING_TYPE,
+        error_stack
     } from '$lib/store.js';
     import { createEventDispatcher } from 'svelte';
     import { get } from 'svelte/store';
     import FileDialog from './FileDialog.svelte';
+    import ErrorMessage from './ErrorMessage.svelte';
 
     const dispatch = createEventDispatcher();
     const close = () => dispatch('close');
@@ -37,6 +38,9 @@
     let file_name = toFileName(file_path);
     let selecting_file = false;
     let show_file_dialog = false;
+    let current_error = null;
+
+    error_stack.subscribe(error => current_error = error);
 
     function savePromo() {
         if (index < 0) {
@@ -132,5 +136,8 @@
                 </div>
             {/if}
         </div>
+        {#if current_error}
+            <ErrorMessage error={current_error} />
+        {/if}
     </Modal>
 {/if}

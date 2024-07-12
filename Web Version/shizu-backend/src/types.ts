@@ -81,3 +81,17 @@ export interface IStaticFolderPermission {
   id: string,
   path: string
 }
+
+export interface IExportDjineupData {
+  name: string,
+  logo_path: string,
+  recording_path: string,
+  resolution: Promise<number[] | Error>
+  url: string
+}
+
+export interface IExportPromoLineupData {
+  name: string,
+  path: string,
+  resolution: Promise<number[] | Error>
+}
