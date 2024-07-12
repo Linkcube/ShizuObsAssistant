@@ -1,55 +1,58 @@
-export class InvalidFileError extends Error {
-    statusCode: number;
-    constructor (message: string) {
+class GraphqlError extends Error {
+    extensions: any;
+    constructor(message: string, statusCode: number) {
         super(message);
-        this.statusCode = 401;
+        this.extensions = {
+            statusCode: statusCode
+        }
     }
 }
 
-export class InvalidDjError extends Error {
-    statusCode: number;
+export class InvalidFileError extends GraphqlError {
     constructor (message: string) {
-        super(message);
-        this.statusCode = 400;
+        super(message, 401);
+        this.extensions["errorType"] = "InvalidFileError";
     }
 }
 
-export class InvalidPromoError extends Error {
-    statusCode: number;
+export class InvalidDjError extends GraphqlError {
     constructor (message: string) {
-        super(message);
-        this.statusCode = 400;
+        super(message, 400);
+        this.extensions["errorType"] = "InvalidDjError";
     }
 }
 
-export class InvalidLineupError extends Error {
-    statusCode: number;
+export class InvalidPromoError extends GraphqlError {
     constructor (message: string) {
-        super(message);
-        this.statusCode = 400;
+        super(message, 400);
+        this.extensions["errorType"] = "InvalidPromoError";
     }
 }
 
-export class DjNotFoundError extends Error {
-    statusCode: number;
+export class InvalidLineupError extends GraphqlError {
     constructor (message: string) {
-        super(message);
-        this.statusCode = 404;
+        super(message, 400);
+        this.extensions["errorType"] = "InvalidLineupError";
     }
 }
 
-export class PromoNotFoundError extends Error {
-    statusCode: number;
+export class DjNotFoundError extends GraphqlError {
     constructor (message: string) {
-        super(message);
-        this.statusCode = 404;
+        super(message, 404);
+        this.extensions["errorType"] = "DjNotFoundError";
     }
 }
 
-export class LineupNotFoundError extends Error {
-    statusCode: number;
+export class PromoNotFoundError extends GraphqlError {
     constructor (message: string) {
-        super(message);
-        this.statusCode = 404;
+        super(message, 404);
+        this.extensions["errorType"] = "PromoNotFoundError";
+    }
+}
+
+export class LineupNotFoundError extends GraphqlError {
+    constructor (message: string) {
+        super(message, 404);
+        this.extensions["errorType"] = "LineupNotFoundError";
     }
 }
