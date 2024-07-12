@@ -18,7 +18,8 @@ const graphqlUrl = `${graphqlBase}/graphql`;
 export const RTMP_SERVERS = [
     {id: "us-west", name: "US West"},
     {id: "us-east", name: "US East"},
-    {id: "japan", name: "Japan"}
+    {id: "japan", name: "Japan"},
+    {id: "europe", name: "Europe"}
 ]
 export const RTMP_BASE = (server) => `rtmp://rtmp-${server}anisonhijack.com/live/`;
 
