@@ -39,6 +39,7 @@
     let selecting_file = false;
     let show_file_dialog = false;
     let current_error = null;
+    let show_save_message = false;
 
     error_stack.subscribe(error => current_error = error);
 
@@ -52,7 +53,12 @@
                 file_path
             );
         }
-        close();
+        setTimeout(() => {
+            show_save_message = false;
+            if (current_error == null) {
+                close();
+            }
+        }, 500);
     }
 
     function selectFile() {
@@ -102,6 +108,10 @@
         margin-top: 10px;
         margin-right: 10px;
     }
+
+    .saving {
+        color: var(--secondary-text-color, red);
+    }
 </style>
 
 {#if show_file_dialog}
@@ -138,6 +148,11 @@
         </div>
         {#if current_error}
             <ErrorMessage error={current_error} />
+        {/if}
+        {#if show_save_message && !current_error}
+            <div class="row saving">
+                <p>Saving...</p>
+            </div>
         {/if}
     </Modal>
 {/if}

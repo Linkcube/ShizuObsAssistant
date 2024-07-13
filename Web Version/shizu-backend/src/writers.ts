@@ -33,6 +33,7 @@ import {
   LineupNotFoundError
 } from "./errors";
 import {
+  getLedger,
   getLineup
 } from "./readers";
 
@@ -47,7 +48,6 @@ function validate_file_path(file_path: string, root_dirs: string[]) {
     const relative = path.relative(root, file_path);
     const isSubdir = relative && !relative.startsWith('..') && !path.isAbsolute(relative);
     if (isSubdir) {
-      console.log("Valid path found!");
       valid_path = true;
     }
   });
@@ -160,7 +160,7 @@ export const updateDj = (data: {
   ).ledger_path;
   const ledger_data: ILedger = JSON.parse(readFileSync(ledger_path, "utf-8"));
 
-  if (data.index < 1 || data.index >= ledger_data.djs.length) {
+  if (data.index < 0 || data.index >= ledger_data.djs.length) {
     return new DjNotFoundError(`No entry exists for DJ ${data.name} at index ${data.index}.`);
   }
 
@@ -234,26 +234,13 @@ export const createLineup = (data: { name: string }) => {
   return "Done";
 };
 
-export const addDjToLineup = (data: {
+const writeToLineupHelper = (
   lineup_name: string,
-  dj_name: string
-}) => {
-  // Validation requires a DB overhaul
-  const lineup = getLineup({name: data.lineup_name});
-  if (lineup instanceof Error) return lineup;
-
-  if (lineup.djs.map(dj => dj.name).includes(data.dj_name)) {
-    return new InvalidDjError(`Lineup ${data.lineup_name} already contains DJ ${data.dj_name}.`);
-  }
-
-  lineup.djs.push({
-    name: data.dj_name,
-    is_live: false
-  })
-
+  lineup: ILineup
+) => {
   const lineup_path = join(
     JSON.parse(readFileSync(SETTINGS_FILE, "utf-8")).lineups_dir,
-    data.lineup_name + ".json",
+    lineup_name + ".json",
   );
   writeFileSync(
     lineup_path,
@@ -262,6 +249,29 @@ export const addDjToLineup = (data: {
       promos: lineup.promos,
     }),
   );
+}
+
+export const addDjToLineup = (data: {
+  lineup_name: string,
+  dj_name: string
+}) => {
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+  const ledger = getLedger();
+
+  if (lineup.djs.map(dj => dj.name).includes(data.dj_name)) {
+    return new InvalidDjError(`Lineup ${data.lineup_name} already contains DJ ${data.dj_name}.`);
+  }
+  if (!ledger.djs.map(dj => dj.name).includes(data.dj_name)) {
+    return new DjNotFoundError(`No entries exist for DJ: ${data.dj_name}.`);
+  }
+
+  lineup.djs.push({
+    name: data.dj_name,
+    is_live: false
+  })
+
+  writeToLineupHelper(data.lineup_name, lineup);
 
   return "Done";
 }
@@ -270,27 +280,56 @@ export const addPromoToLineup = (data: {
   lineup_name: string,
   promo_name: string
 }) => {
-  // Validation requires a DB overhaul
   const lineup = getLineup({name: data.lineup_name});
   if (lineup instanceof Error) return lineup;
+  const ledger = getLedger();
 
   if (lineup.promos.includes(data.promo_name)) {
     return new InvalidPromoError(`Lineup ${data.lineup_name} already contains Promo ${data.promo_name}.`);
   }
+  if (!ledger.promos.map(promo => promo.name).includes(data.promo_name)) {
+    return new DjNotFoundError(`No entries exist for Promo: ${data.promo_name}.`);
+  }
 
   lineup.promos.push(data.promo_name);
 
-  const lineup_path = join(
-    JSON.parse(readFileSync(SETTINGS_FILE, "utf-8")).lineups_dir,
-    data.lineup_name + ".json",
-  );
-  writeFileSync(
-    lineup_path,
-    JSON.stringify({
-      djs: lineup.djs,
-      promos: lineup.promos,
-    }),
-  );
+  writeToLineupHelper(data.lineup_name, lineup);
+
+  return "Done";
+}
+
+export const removeDjFromLineup = (data: {
+  lineup_name: string,
+  dj_name: string
+}) => {
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  if (!lineup.djs.map(dj => dj.name).includes(data.dj_name)) {
+    return new InvalidDjError(`Lineup ${data.lineup_name} does not include ${data.dj_name}.`);
+  }
+
+  lineup.djs = lineup.djs.filter(dj => dj.name != data.dj_name);
+
+  writeToLineupHelper(data.lineup_name, lineup);
+
+  return "Done";
+}
+
+export const removePromoFromLineup = (data: {
+  lineup_name: string,
+  promo_name: string
+}) => {
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  if (!lineup.promos.includes(data.promo_name)) {
+    return new InvalidPromoError(`Lineup ${data.lineup_name} does not include ${data.promo_name}.`);
+  }
+
+  lineup.promos = lineup.promos.filter(promo => promo != data.promo_name);
+
+  writeToLineupHelper(data.lineup_name, lineup);
 
   return "Done";
 }
@@ -308,15 +347,22 @@ export const updateLineup = (data: {
     return new LineupNotFoundError(`Could not find Lineup: ${data.name}.`);
   }
 
-  // TODO: validate djs and promos
+  const ledger = getLedger();
+  const invalid_entries: string[] = [];
+  data.djs.forEach((lineup_dj) => {
+    if (!ledger.djs.map(dj => dj.name).includes(lineup_dj.name)) invalid_entries.push(lineup_dj.name);
+  });
+  data.promos.forEach((lineup_promo) => {
+    if (!ledger.promos.map(promo => promo.name).includes(lineup_promo)) invalid_entries.push(lineup_promo);
+  });
+  if (invalid_entries.length > 0) {
+    return new InvalidLineupError(`The following entries don't exist in the ledger: ${invalid_entries.toString()}`);
+  }
 
-  writeFileSync(
-    lineup_path,
-    JSON.stringify({
-      djs: data.djs,
-      promos: data.promos,
-    }),
-  );
+  writeToLineupHelper(data.name, {
+    djs: data.djs,
+    promos: data.promos
+  });
 
   return "Done";
 };

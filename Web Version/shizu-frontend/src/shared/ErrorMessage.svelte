@@ -10,14 +10,14 @@
     .row {
         display: flex;
         flex-direction: row;
-        color: var(--cancel-text-color, red);;
+        color: var(--cancel-text-color, red);
     }
 </style>
 
 <div class="container">
-    <div class="row">
+    <!-- <div class="row">
         {error.extensions.errorType} (HTTP {error.extensions.statusCode})
-    </div>
+    </div> -->
     <div class="row">
         {error.message}
     </div> 

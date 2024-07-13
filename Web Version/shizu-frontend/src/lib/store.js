@@ -321,6 +321,22 @@ mutation {
     )
 }`
 
+const removeDjFromLineuppMutation = (lineup_name, dj_name) => `
+mutation {
+    removeDjFromLineup(
+        lineup_name: "${lineup_name}",
+        dj_name: "${dj_name}"
+    )
+}`
+
+const removePromoFromLineuppMutation = (lineup_name, promo_name) => `
+mutation {
+    removePromoFromLineup(
+        lineup_name: "${lineup_name}",
+        promo_name: "${promo_name}"
+    )
+}`
+
 const exportLineupMutation = (lineup_name, dir) => `
 mutation {
     exportLineup(lineup_name: "${lineup_name}", export_dir: "${dir}")
@@ -441,10 +457,10 @@ export function fetchAddDj(name, logo_path, recording_path, rtmp_server, stream_
 export function fetchUpdateDj(index, name, logo_path, recording_path, rtmp_server, stream_key) {
     fetch(updateDjMutation(index, name, logo_path, recording_path, rtmp_server, stream_key)).then(promise => {
         Promise.resolve(promise).then(response => {
+            console.log(response);
             if (response.hasOwnProperty("errors")) {
                 errorStackPushHelper(response.errors[0]);
-            }
-			if (response.hasOwnProperty("data")) {
+            } else if (response.hasOwnProperty("data")) {
 				ledger.set(response.data.updateDj);
 			}
 		})
@@ -492,7 +508,13 @@ export function updateLineupHelper(lineup_name, dj_objects, promos) {
         lineup_name,
         djs_string,
         promos_string
-    ));
+    )).then(promise => {
+        Promise.resolve(promise).then(response => {
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
+            }
+		});
+    });
 }
 
 export function fetchAddDjToLineup(lineup_name, dj_name) {
@@ -517,15 +539,13 @@ export function fetchUpdateLineupDj(lineup_name, is_live, index) {
     });
 }
 
-export function fetchRemoveLineupDj(lineup_name, index) {
-    return fetch(getLineup(lineup_name)).then(promise => {
+export function fetchRemoveLineupDj(lineup_name, dj_name) {
+    return fetch(removeDjFromLineuppMutation(lineup_name, dj_name)).then(promise => {
         Promise.resolve(promise).then(response => {
-			if (response.hasOwnProperty("data")) {
-                let lineup_data = response.data.getLineup;
-                lineup_data.djs.splice(index, 1);
-                return updateLineupHelper(lineup_name, lineup_data.djs, lineup_data.promos);
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
             }
-		})
+		});
     });
 }
 
@@ -570,15 +590,13 @@ export function fetchAddPromoToLineup(lineup_name, promo_name) {
     });
 }
 
-export function fetchRemoveLineupPromo(lineup_name, index) {
-    return fetch(getLineup(lineup_name)).then(promise => {
+export function fetchRemoveLineupPromo(lineup_name, promo_name) {
+    return fetch(removePromoFromLineuppMutation(lineup_name, promo_name)).then(promise => {
         Promise.resolve(promise).then(response => {
-			if (response.hasOwnProperty("data")) {
-                let lineup_data = response.data.getLineup;
-                lineup_data.promos.splice(index, 1);
-                return updateLineupHelper(lineup_name, lineup_data.djs, lineup_data.promos);
+            if (response.hasOwnProperty("errors")) {
+                errorStackPushHelper(response.errors[0]);
             }
-		})
+		});
     });
 }
 

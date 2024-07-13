@@ -25,6 +25,8 @@ type Mutation {
     updateLineup(name: String!, djs: [lineupDjObjectInput], promos: [String]): String
     addDjToLineup(lineup_name: String!, dj_name: String!): String
     addPromoToLineup(lineup_name: String!, promo_name: String!): String
+    removeDjFromLineup(lineup_name: String!, dj_name: String!): String
+    removePromoFromLineup(lineup_name: String!, dj_name: String!): String
     addAppTheme: [themeObject]
     editAppTheme(themeIndex: Int!, newThemeTitle: String!, newThemeStyle: themeStyleInput!): [themeObject]
     deleteAppTheme(themeIndex: Int!): [themeObject]

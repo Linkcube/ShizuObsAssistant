@@ -42,14 +42,20 @@
     let show_logo_dialog = false;
     let show_recording_dialog = false;
     let current_error = null;
+    let show_save_message = false;
 
 
     const dispatch = createEventDispatcher();
     const close = () => dispatch('close');
 
-    error_stack.subscribe(error => current_error = error);
+    error_stack.subscribe(error => {
+        current_error = error;
+        console.log(error);
+    });
 
     function saveDj() {
+        current_error = null;
+        show_save_message = true;
         if (index < 0) {
             fetchAddDj(
                 name,
@@ -68,7 +74,12 @@
                 stream_key
             )
         }
-        close();
+        setTimeout(() => {
+            show_save_message = false;
+            if (current_error == null) {
+                close();
+            }
+        }, 500);
     }
 
     function selectLogo() {
@@ -130,6 +141,10 @@
         margin-top: 10px;
         margin-right: 10px;
     }
+
+    .saving {
+        color: var(--secondary-text-color, red);
+    }
 </style>
 
 {#if show_logo_dialog}
@@ -183,6 +198,11 @@
         {/if}
         {#if current_error}
             <ErrorMessage error={current_error} />
+        {/if}
+        {#if show_save_message && !current_error}
+            <div class="row saving">
+                <p>Saving...</p>
+            </div>
         {/if}
     </div>
 </Modal>

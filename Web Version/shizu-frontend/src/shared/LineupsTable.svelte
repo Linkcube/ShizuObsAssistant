@@ -5,7 +5,6 @@
 		currentLineupObjects,
         fetchLineup,
         updateLineupHelper,
-        fetchGetDirPath,
         fetchExportLineup,
         fetchDeleteLineup,
         fetchLineups,
@@ -22,11 +21,9 @@
     import DjLineupModal from '../shared/DjLineupModal.svelte';
     import PromoLineupModal from '../shared/PromoLineupModal.svelte';
     import NewMatTableRow from './NewMatTableRow.svelte';
-    import {flip} from 'svelte/animate';
     import NewMatTable from './NewMatTable.svelte';
     import FileDialog from './FileDialog.svelte';
     import ErrorPopup from './ErrorPopup.svelte';
-    import ErrorMessage from './ErrorMessage.svelte';
 
     let lineups_data = []
     let display_lineups = []
@@ -50,13 +47,17 @@
     let last_dragover_index = -1;
     let loading = true;
 
-    let selecting_export_dir = false;
     let show_export_dialog = false;
     let show_export_error = false;
     let current_error = null;
+    let last_action = "";
 
     error_stack.subscribe(error => current_error = error);
-    const close_error = () => show_export_error = false;
+    const close_error = () => {
+        show_export_error = false;
+        show_edit_dj = false;
+        show_edit_promo = false;
+    }
 
     lineups.subscribe(value => {
         lineups_data = value;
@@ -101,6 +102,8 @@
 	}
 
     const editDj = (index, name, is_live) => {
+        show_export_error = true;
+        last_action = "Edit DJ Failed";
         edit_dj_index = index;
         edit_dj_name = name;
         edit_dj_is_live = is_live;
@@ -108,6 +111,8 @@
     }
 
     const editPromo = (index, name) => {
+        show_export_error = true;
+        last_action = "Edit Promo Failed";
         edit_promo_index = index;
         edit_promo_name = name;
         show_edit_promo = true;
@@ -122,6 +127,8 @@
     }
 
     function handleDjDragEnd() {
+        last_action = "Edit DJ lineup order failed";
+        show_export_error = true;
         if (dragging_index < 0 || last_dragover_index < 0) return;
         if (dragging_index === last_dragover_index) return;
         let moving_value = lineup_djs[dragging_index]
@@ -135,9 +142,14 @@
         
         loading = true;
         updateLineupHelper(current_lineup, lineup_djs, lineup_promos.map(promo => promo.name)).then(_ => fetchLineup(current_lineup));
+        setTimeout(() => {
+            if (current_error == null) show_export_error = false;
+        }, 500);
     }
 
     function handlePromoDragEnd() {
+        last_action = "Edit Promo lineup order failed";
+        show_export_error = true;
         if (dragging_index < 0 || last_dragover_index < 0) return;
         if (dragging_index === last_dragover_index) return;
         let moving_value = lineup_promos[dragging_index]
@@ -151,6 +163,9 @@
         
         loading = true;
         updateLineupHelper(current_lineup, lineup_djs, lineup_promos.map(promo => promo.name)).then(_ => fetchLineup(current_lineup));
+        setTimeout(() => {
+            if (current_error == null) show_export_error = false;
+        }, 500);
     }
 
     function toggleLineupObjects() {
@@ -160,6 +175,7 @@
     }
 
     function exportLineup() {
+        last_action = "Export Failed";
         show_export_dialog = true;
         show_export_error = true;
     }
@@ -251,7 +267,7 @@
 </style>
 
 {#if current_error && show_export_error}
-    <ErrorPopup error={current_error} header="Export Failed" on:close={close_error} />
+    <ErrorPopup error={current_error} header={last_action} on:close={close_error} />
 {/if}
 {#if show_add_lineup}
     <AddLineupModal on:close={() => show_add_lineup = false} />
