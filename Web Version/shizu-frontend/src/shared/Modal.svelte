@@ -11,7 +11,6 @@
     const close = () => dispatch('close');
     const submission = () => {
         dispatch('submission');
-        // dispatch('close');
     }
 
 	/**

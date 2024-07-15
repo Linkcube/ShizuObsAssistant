@@ -1,4 +1,4 @@
-import path, { join, resolve, basename, parse } from "path";
+import path, { join, resolve, parse } from "path";
 import {
   readdirSync,
   Dirent,

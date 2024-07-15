@@ -8,7 +8,6 @@
     import Modal from './Modal.svelte';
     import { 
         fetchAddDj,
-        fetchGetFilePath,
         fetchUpdateDj,
         fetchDeleteDj,
         RTMP_SERVERS,
@@ -50,7 +49,6 @@
 
     error_stack.subscribe(error => {
         current_error = error;
-        console.log(error);
     });
 
     function saveDj() {

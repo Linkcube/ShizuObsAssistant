@@ -1,12 +1,10 @@
-import path, { join, resolve, basename } from "path";
+import path, { join, resolve } from "path";
 import {
   readdirSync,
   Dirent,
   existsSync,
   readFileSync,
   writeFileSync,
-  mkdirSync,
-  rm,
   rmSync,
 } from "fs";
 import type {
@@ -22,7 +20,7 @@ import type {
   IExportDjineupData,
   IExportPromoLineupData
 } from "./types";
-import { FfprobeData, ffprobe } from "fluent-ffmpeg";
+import { ffprobe } from "fluent-ffmpeg";
 import { 
   InvalidFileError,
   InvalidDjError,
@@ -40,6 +38,12 @@ import {
 const SETTINGS_FILE = join(resolve("."), "settings.json");
 const APP_THEMES_FILE = join(resolve("."), "themes.json");
 const PERMISSIONS_FILE = join(resolve("."), "permissions.json")
+const VALID_RTMPS = [
+  "us-west",
+  "us-east",
+  "jp",
+  "europe"
+]
 
 function validate_file_path(file_path: string, root_dirs: string[]) {
   var valid_path = false;
@@ -164,7 +168,16 @@ export const updateDj = (data: {
     return new DjNotFoundError(`No entry exists for DJ ${data.name} at index ${data.index}.`);
   }
 
+  if (
+    ledger_data.djs.find((dj) => {
+      return dj.name === data.name;
+    })
+  ) {
+    return new InvalidDjError(`DJ ${data.name} already exists`);
+  }
+
   const dj: IDj = ledger_data.djs[data.index];
+  const old_name = dj.name;
 
   try {
     if (data.logo_path) validate_logo(data.logo_path);
@@ -176,11 +189,36 @@ export const updateDj = (data: {
   if (data.name) dj.name = data.name;
   if (data.logo_path) dj.logo_path = data.logo_path;
   if (data.recording_path) dj.recording_path = data.recording_path;
-  if (data.rtmp_server) dj.rtmp_server = data.rtmp_server;
+  if (data.rtmp_server) {
+    if (!VALID_RTMPS.includes(data.rtmp_server)) {
+      return new InvalidDjError(`DJ rtmp server ${data.rtmp_server} is not valid!`);
+    }
+    dj.rtmp_server = data.rtmp_server;
+  }
   if (data.stream_key) dj.stream_key = data.stream_key;
 
   ledger_data.djs[data.index] = dj;
   writeFileSync(ledger_path, JSON.stringify(ledger_data));
+
+  // Update lineups
+  const settings_data: ISettings = JSON.parse(
+    readFileSync(SETTINGS_FILE, "utf-8"),
+  );
+  const lineups: string[] = readdirSync(settings_data.lineups_dir, {
+    withFileTypes: true,
+  })
+    .filter((file: Dirent) => file.isFile())
+    .map((file: Dirent) => file.name);
+
+  lineups.map((lineup) => {
+    const lineup_path = join(settings_data.lineups_dir, lineup);
+    const lineup_data: ILineup = JSON.parse(readFileSync(lineup_path, "utf-8"));
+    lineup_data.djs.map((dj, index) => {
+      if (dj.name == old_name) lineup_data.djs[index].name = data.name
+    });
+    writeFileSync(lineup_path, JSON.stringify(lineup_data));
+  });
+
   return ledger_data;
 };
 
@@ -198,6 +236,14 @@ export const updatePromo = (data: {
     return new PromoNotFoundError(`No entry exists for Promo ${data.name} at index ${data.index}.`);
   }
 
+  if (
+    ledger_data.promos.find((promo) => {
+      return promo.name === data.name;
+    })
+  ) {
+    return new InvalidPromoError(`Promo ${data.name} already exists`);
+  }
+
   try {
     if (data.path) validate_recording(data.path);
   } catch (error) {
@@ -205,12 +251,33 @@ export const updatePromo = (data: {
   }
 
   const promo: IPromo = ledger_data.promos[data.index];
+  const old_name = promo.name;
 
   if (data.name) promo.name = data.name;
   if (data.path) promo.path = data.path;
 
   ledger_data.promos[data.index] = promo;
   writeFileSync(ledger_path, JSON.stringify(ledger_data));
+
+  // Update lineups
+  const settings_data: ISettings = JSON.parse(
+    readFileSync(SETTINGS_FILE, "utf-8"),
+  );
+  const lineups: string[] = readdirSync(settings_data.lineups_dir, {
+    withFileTypes: true,
+  })
+    .filter((file: Dirent) => file.isFile())
+    .map((file: Dirent) => file.name);
+
+  lineups.map((lineup) => {
+    const lineup_path = join(settings_data.lineups_dir, lineup);
+    const lineup_data: ILineup = JSON.parse(readFileSync(lineup_path, "utf-8"));
+    lineup_data.promos.map((promo, index) => {
+      if (promo == old_name) lineup_data.promos[index] = data.name
+    });
+    writeFileSync(lineup_path, JSON.stringify(lineup_data));
+  });
+
   return ledger_data;
 };
 
@@ -339,6 +406,7 @@ export const updateLineup = (data: {
   djs: ILineupDj[];
   promos: string[];
 }) => {
+  console.log("The update lineup call is deprecated, and will be removed in future builds");
   const lineup_path = join(
     JSON.parse(readFileSync(SETTINGS_FILE, "utf-8")).lineups_dir,
     data.name + ".json",
@@ -366,6 +434,93 @@ export const updateLineup = (data: {
 
   return "Done";
 };
+
+export const setLineupDjLive = (data: {
+  lineup_name: string,
+  dj_name: string,
+  is_live: boolean
+}) => {
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  let dj_index = -1;
+  lineup.djs.forEach((dj, index) => {
+    if (dj.name == data.dj_name) dj_index = index;
+  });
+
+  if (dj_index < 0) return new DjNotFoundError(`Could not find DJ ${data.dj_name} in Lineup ${data.lineup_name}.`);
+
+  lineup.djs[dj_index].is_live = data.is_live;
+
+  writeToLineupHelper(data.lineup_name, {
+    djs: lineup.djs,
+    promos: lineup.promos
+  });
+
+  return "Done";
+}
+
+export const swapLineupDJs = (data: {
+  lineup_name: string,
+  index_a: number,
+  index_b: number
+}) => {
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  if ((data.index_a < 0 || data.index_a >= lineup.djs.length) || (data.index_b < 0 || data.index_b >= lineup.djs.length)) {
+    return new InvalidLineupError(`The swap indexes (${data.index_a}, ${data.index_b}) are not valid for Lineup ${data.lineup_name}.`);
+  }
+
+  if (data.index_a == data.index_b) return "Done";
+
+  let moving_value = lineup.djs[data.index_a]
+  let target_value = lineup.djs[data.index_b];
+  lineup.djs.splice(data.index_a, 1);
+  if (data.index_a > data.index_b) {
+    lineup.djs.splice(lineup.djs.indexOf(target_value), 0, moving_value);
+  } else {
+    lineup.djs.splice(lineup.djs.indexOf(target_value) + 1, 0, moving_value);
+  }
+
+  writeToLineupHelper(data.lineup_name, {
+    djs: lineup.djs,
+    promos: lineup.promos
+  });
+
+  return "Done";
+}
+
+export const swapLineupPromos = (data: {
+  lineup_name: string,
+  index_a: number,
+  index_b: number
+}) => {
+  const lineup = getLineup({name: data.lineup_name});
+  if (lineup instanceof Error) return lineup;
+
+  if ((data.index_a < 0 || data.index_a >= lineup.promos.length) || (data.index_b < 0 || data.index_b >= lineup.promos.length)) {
+    return new InvalidLineupError(`The swap indexes (${data.index_a}, ${data.index_b}) are not valid for Lineup ${data.lineup_name}.`);
+  }
+
+  if (data.index_a == data.index_b) return "Done";
+
+  let moving_value = lineup.promos[data.index_a]
+  let target_value = lineup.promos[data.index_b];
+  lineup.promos.splice(data.index_a, 1);
+  if (data.index_a > data.index_b) {
+    lineup.promos.splice(lineup.promos.indexOf(target_value), 0, moving_value);
+  } else {
+    lineup.promos.splice(lineup.promos.indexOf(target_value) + 1, 0, moving_value);
+  }
+
+  writeToLineupHelper(data.lineup_name, {
+    djs: lineup.djs,
+    promos: lineup.promos
+  });
+
+  return "Done";
+}
 
 export const addAppTheme = () => {
   let themes: ITheme[] = [];

@@ -63,7 +63,7 @@
     }
 
     export const saveDj = () => {
-        fetchUpdateLineupDj(current_lineup, is_live, index).then(_ => fetchLineup(current_lineup));
+        fetchUpdateLineupDj(current_lineup, dj_data.name, is_live).then(_ => fetchLineup(current_lineup));
         close();
     }
 </script>

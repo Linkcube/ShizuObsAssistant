@@ -4,7 +4,10 @@
         currentLineup,
 		currentLineupObjects,
         fetchLineup,
-        updateLineupHelper,
+        fetchRemoveLineupDj,
+        fetchRemoveLineupPromo,
+        fetchSwapLineupDjs,
+        fetchSwapLineupPromos,
         fetchExportLineup,
         fetchDeleteLineup,
         fetchLineups,
@@ -24,6 +27,14 @@
     import NewMatTable from './NewMatTable.svelte';
     import FileDialog from './FileDialog.svelte';
     import ErrorPopup from './ErrorPopup.svelte';
+
+    const EDIT_DJ_FAILED = "Edit DJ Failed";
+    const EDIT_PROMO_FAILED = "Edit Promo Failed";
+    const EDIT_DJ_LINEUP_ORDER_FAILED = "Edit DJ Lineup Order Failed";
+    const EDIT_PROMO_LINEUP_ORDER_FAILED = "Edit Promo Lineup Order Failed";
+    const REMOVE_DJ_FAILED = "Remove DJ Failed";
+    const REMOVE_PROMO_FAILED = "Remove DJ Failed";
+    const EXPORT_FAILED = "Export Failed";
 
     let lineups_data = []
     let display_lineups = []
@@ -103,7 +114,7 @@
 
     const editDj = (index, name, is_live) => {
         show_export_error = true;
-        last_action = "Edit DJ Failed";
+        last_action = EDIT_DJ_FAILED;
         edit_dj_index = index;
         edit_dj_name = name;
         edit_dj_is_live = is_live;
@@ -112,7 +123,7 @@
 
     const editPromo = (index, name) => {
         show_export_error = true;
-        last_action = "Edit Promo Failed";
+        last_action = EDIT_PROMO_FAILED;
         edit_promo_index = index;
         edit_promo_name = name;
         show_edit_promo = true;
@@ -127,8 +138,9 @@
     }
 
     function handleDjDragEnd() {
-        last_action = "Edit DJ lineup order failed";
+        last_action = EDIT_DJ_LINEUP_ORDER_FAILED;
         show_export_error = true;
+        // In browser for svelte animation
         if (dragging_index < 0 || last_dragover_index < 0) return;
         if (dragging_index === last_dragover_index) return;
         let moving_value = lineup_djs[dragging_index]
@@ -141,15 +153,16 @@
         }
         
         loading = true;
-        updateLineupHelper(current_lineup, lineup_djs, lineup_promos.map(promo => promo.name)).then(_ => fetchLineup(current_lineup));
+        fetchSwapLineupDjs(current_lineup, dragging_index, last_dragover_index).then(_ => fetchLineup(current_lineup));
         setTimeout(() => {
             if (current_error == null) show_export_error = false;
         }, 500);
     }
 
     function handlePromoDragEnd() {
-        last_action = "Edit Promo lineup order failed";
+        last_action = EDIT_PROMO_LINEUP_ORDER_FAILED;
         show_export_error = true;
+        // In browser for svelte animation
         if (dragging_index < 0 || last_dragover_index < 0) return;
         if (dragging_index === last_dragover_index) return;
         let moving_value = lineup_promos[dragging_index]
@@ -162,7 +175,7 @@
         }
         
         loading = true;
-        updateLineupHelper(current_lineup, lineup_djs, lineup_promos.map(promo => promo.name)).then(_ => fetchLineup(current_lineup));
+        fetchSwapLineupPromos(current_lineup, dragging_index, last_dragover_index).then(_ => fetchLineup(current_lineup));
         setTimeout(() => {
             if (current_error == null) show_export_error = false;
         }, 500);
@@ -175,7 +188,7 @@
     }
 
     function exportLineup() {
-        last_action = "Export Failed";
+        last_action = EXPORT_FAILED;
         show_export_dialog = true;
         show_export_error = true;
     }
@@ -208,7 +221,7 @@
     }
 
     const enterSearch = () => {
-        if (search_value === "") {
+        if (!search_value || search_value === "") {
             display_lineups = lineups_data.map((lineup, index) => {
                 return ({
                     index: index,
@@ -224,6 +237,26 @@
                 });
             });
         }
+    }
+
+    function removeErrorFromLineup() {
+        if (last_action == EDIT_DJ_FAILED) {
+            console.log(`Lineup: ${current_lineup}, DJ: ${edit_dj_name}`);
+            fetchRemoveLineupDj(current_lineup, edit_dj_name).then(_ => fetchLineup(current_lineup));
+            last_action = REMOVE_DJ_FAILED;
+        } else if (last_action == EDIT_PROMO_FAILED) {
+            console.log(`Lineup: ${current_lineup}, Promo: ${edit_promo_name}`);
+            fetchRemoveLineupPromo(current_lineup, edit_promo_name).then(_ => fetchLineup(current_lineup));
+            last_action = REMOVE_PROMO_FAILED
+        } else {
+            console.log(`Unexpected error callback for ${last_action}`);
+        }
+
+        show_edit_dj = false;
+        show_edit_promo = false;
+        setTimeout(() => {
+            if (current_error == null) show_export_error = false;
+        }, 500);
     }
 
     
@@ -267,7 +300,11 @@
 </style>
 
 {#if current_error && show_export_error}
-    <ErrorPopup error={current_error} header={last_action} on:close={close_error} />
+    {#if last_action && last_action.startsWith("Edit")}
+        <ErrorPopup error={current_error} header={last_action} callback="Remove from Lineup" on:close={close_error} on:callback={removeErrorFromLineup}/>
+    {:else}
+        <ErrorPopup error={current_error} header={last_action} on:close={close_error} />
+    {/if}
 {/if}
 {#if show_add_lineup}
     <AddLineupModal on:close={() => show_add_lineup = false} />
