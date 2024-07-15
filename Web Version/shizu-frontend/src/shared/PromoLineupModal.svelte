@@ -7,7 +7,8 @@
         fetchLineup,
         ledger,
         toFileName,
-        fetchRemoveLineupPromo
+        fetchRemoveLineupPromo,
+        error_stack
     } from '$lib/store.js';
     import { createEventDispatcher } from 'svelte';
     import { get } from 'svelte/store';
@@ -16,16 +17,31 @@
     export let current_lineup = "";
     export let name = "";
 
-    const ledger_data = get(ledger);
-    const promo_data = ledger_data.promos.filter(promo => promo.name === name)[0];
-
-    let file_name = toFileName(promo_data.path);
-
     const dispatch = createEventDispatcher();
     const close = () => dispatch('close');
 
-    export const removeDj = () => {
-        fetchRemoveLineupPromo(current_lineup, index).then(_ => fetchLineup(current_lineup));
+    let error_on_init = false;
+    let file_name;
+
+    const ledger_data = get(ledger);
+    const promo_data = ledger_data.promos.filter(promo => promo.name === name)[0];
+
+    if (promo_data === undefined) {
+        error_stack.set({
+            message: `Could not find Promo ${name} in ledger.`,
+            extensions: {
+                statusCode: 404,
+                errorType: "PromoNotFoundError"
+            }
+        });
+        error_on_init = true;
+        close();
+    } else {
+        file_name = toFileName(promo_data.path);
+    }
+
+    export const removePromo = () => {
+        fetchRemoveLineupPromo(current_lineup, name).then(_ => fetchLineup(current_lineup));
         close();
     }
 </script>
@@ -47,16 +63,18 @@
     }
 </style>
 
-<Modal on:close={close} use_submission={false}>
-    <div class="central-column">
-        <div class="row">
-            <p>Name: {name}</p>
-            <div class="delete">
-                <IconButton icon="delete" title="Remove from lineup" on:click={removeDj} />
+{#if !error_on_init}
+    <Modal on:close={close} use_submission={false}>
+        <div class="central-column">
+            <div class="row">
+                <p>Name: {name}</p>
+                <div class="delete">
+                    <IconButton icon="delete" title="Remove from lineup" on:click={removePromo} />
+                </div>
+            </div>
+            <div class="row">
+                <p>Promo File: {file_name ? file_name : "Not Set"}</p>
             </div>
         </div>
-        <div class="row">
-            <p>Promo File: {file_name ? file_name : "Not Set"}</p>
-        </div>
-    </div>
-</Modal>
+    </Modal>
+{/if}

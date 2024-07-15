@@ -14,7 +14,7 @@ import {
   getStaticPathPermissions,
   reconstructLogoPath,
   reconstructRecordingPath,
-  reconstructExportPath
+  reconstructExportPath,
 } from "./readers";
 import {
   addDj,
@@ -23,6 +23,13 @@ import {
   updatePromo,
   createLineup,
   updateLineup,
+  setLineupDjLive,
+  swapLineupDJs,
+  swapLineupPromos,
+  addDjToLineup,
+  addPromoToLineup,
+  removeDjFromLineup,
+  removePromoFromLineup,
   addAppTheme,
   editAppTheme,
   deleteAppTheme,
@@ -31,7 +38,7 @@ import {
   deletePromo,
   deleteLineup,
   updateSettings,
-  exportLineup
+  exportLineup,
 } from "./writers";
 import express from "express";
 import cors from "cors";
@@ -56,6 +63,13 @@ const root = {
   updatePromo,
   createLineup,
   updateLineup,
+  addDjToLineup,
+  setLineupDjLive,
+  swapLineupDJs,
+  swapLineupPromos,
+  addPromoToLineup,
+  removeDjFromLineup,
+  removePromoFromLineup,
   addAppTheme,
   editAppTheme,
   deleteAppTheme,
@@ -64,7 +78,7 @@ const root = {
   deletePromo,
   deleteLineup,
   updateSettings,
-  exportLineup
+  exportLineup,
 };
 
 const app = express();
@@ -79,15 +93,24 @@ app.use(
 );
 
 // Static permissions dirs
-let static_permissions = getStaticPathPermissions();
-static_permissions.logos.map(permission => {
-  app.use(`/logos/${encodeURIComponent(permission.id)}`, express.static(permission.path));
+const static_permissions = getStaticPathPermissions();
+static_permissions.logos.map((permission) => {
+  app.use(
+    `/logos/${encodeURIComponent(permission.id)}`,
+    express.static(permission.path),
+  );
 });
-static_permissions.recordings.map(permission => {
-  app.use(`/recordings/${encodeURIComponent(permission.id)}`, express.static(permission.path));
+static_permissions.recordings.map((permission) => {
+  app.use(
+    `/recordings/${encodeURIComponent(permission.id)}`,
+    express.static(permission.path),
+  );
 });
-static_permissions.exports.map(permission => {
-  app.use(`/exports/${encodeURIComponent(permission.id)}`, express.static(permission.path));
+static_permissions.exports.map((permission) => {
+  app.use(
+    `/exports/${encodeURIComponent(permission.id)}`,
+    express.static(permission.path),
+  );
 });
 
 // Listen for graphql

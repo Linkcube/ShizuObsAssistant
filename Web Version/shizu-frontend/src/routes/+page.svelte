@@ -3,7 +3,6 @@
     import Header from '../shared/Header.svelte';
     import MainContents from '../shared/MainContents.svelte';
 	import Footer from "../shared/Footer.svelte";
-	
 </script>
 
 <svelte:head>

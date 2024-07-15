@@ -23,6 +23,13 @@ type Mutation {
     updatePromo(index: Int!, name: String, path: String): ledgerObject
     createLineup(name: String!): String
     updateLineup(name: String!, djs: [lineupDjObjectInput], promos: [String]): String
+    setLineupDjLive(lineup_name: String!, dj_name: String!, is_live: Boolean!): String
+    swapLineupDJs(lineup_name: String!, index_a: Int!, index_b: Int!): String
+    swapLineupPromos(lineup_name: String!, index_a: Int!, index_b: Int!): String
+    addDjToLineup(lineup_name: String!, dj_name: String!): String
+    addPromoToLineup(lineup_name: String!, promo_name: String!): String
+    removeDjFromLineup(lineup_name: String!, dj_name: String!): String
+    removePromoFromLineup(lineup_name: String!, promo_name: String!): String
     addAppTheme: [themeObject]
     editAppTheme(themeIndex: Int!, newThemeTitle: String!, newThemeStyle: themeStyleInput!): [themeObject]
     deleteAppTheme(themeIndex: Int!): [themeObject]

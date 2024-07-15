@@ -1,6 +1,9 @@
 <script>
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { MaterialButton } from 'linkcube-svelte-components';
+	import { 
+        error_stack
+    } from '$lib/store.js';
 	
 	export let use_submission = true;
 
@@ -8,7 +11,6 @@
     const close = () => dispatch('close');
     const submission = () => {
         dispatch('submission');
-        dispatch('close');
     }
 
 	/**
@@ -42,6 +44,7 @@
 
 	if (previously_focused) {
 		onDestroy(() => {
+			error_stack.set(null);
 			previously_focused.focus();
 		});
 	}

@@ -8,7 +8,6 @@
     import Modal from './Modal.svelte';
     import { 
         fetchAddDj,
-        fetchGetFilePath,
         fetchUpdateDj,
         fetchDeleteDj,
         RTMP_SERVERS,
@@ -17,16 +16,14 @@
         fetchAddDjToLineup,
         fetchLineup,
         toFileName,
-
         RECORDING_TYPE,
-
-        LOGO_TYPE
-
-
+        LOGO_TYPE,
+        error_stack
     } from '$lib/store.js';
     import { createEventDispatcher } from 'svelte';
     import { get } from 'svelte/store';
     import FileDialog from './FileDialog.svelte';
+    import ErrorMessage from './ErrorMessage.svelte';
 
     export let index = -1;
     export let name = "";
@@ -43,12 +40,20 @@
     let target_lineup = lineup_names[0];
     let show_logo_dialog = false;
     let show_recording_dialog = false;
+    let current_error = null;
+    let show_save_message = false;
 
 
     const dispatch = createEventDispatcher();
     const close = () => dispatch('close');
 
+    error_stack.subscribe(error => {
+        current_error = error;
+    });
+
     function saveDj() {
+        current_error = null;
+        show_save_message = true;
         if (index < 0) {
             fetchAddDj(
                 name,
@@ -67,7 +72,12 @@
                 stream_key
             )
         }
-        close();
+        setTimeout(() => {
+            show_save_message = false;
+            if (current_error == null) {
+                close();
+            }
+        }, 500);
     }
 
     function selectLogo() {
@@ -129,6 +139,10 @@
         margin-top: 10px;
         margin-right: 10px;
     }
+
+    .saving {
+        color: var(--secondary-text-color, red);
+    }
 </style>
 
 {#if show_logo_dialog}
@@ -178,6 +192,14 @@
                         {/each}
                     </MaterialSelect>
                 {/if}
+            </div>
+        {/if}
+        {#if current_error}
+            <ErrorMessage error={current_error} />
+        {/if}
+        {#if show_save_message && !current_error}
+            <div class="row saving">
+                <p>Saving...</p>
             </div>
         {/if}
     </div>

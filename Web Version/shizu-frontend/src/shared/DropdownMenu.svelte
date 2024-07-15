@@ -2,7 +2,6 @@
     import { IconButton } from "linkcube-svelte-components";
     import ThemeMenu from "./ThemeMenu.svelte";
     import Settings from "./Settings.svelte";
-    import ReadeMe from "./Readme.svelte";
     import Readme from "./Readme.svelte";
     import Checklist from "./Checklist.svelte";
 

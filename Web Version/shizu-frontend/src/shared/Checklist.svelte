@@ -78,13 +78,13 @@
             <span>5. Export Your Lineup</span>
         </div>
         <div class="row text">
-            <span>While still in the lineup table, click on the download button to select a directory to export your file. Don't use your existing lineups directory as these files contain different data and could overwrite eachother.</span>
+            <span>While still in the lineup table, click on the download button to select a directory to export your file. Don't use your existing lineups directory from the old python program as these files contain different data and could overwrite eachother.</span>
         </div>
         <div class="row step">
             <span>6. Import to OBS</span>
         </div>
         <div class="row text">
-            <span>In OBS, use the "obs_hijack_script.py" to import the file created in the previous step, you should now have new scenes for each of your DJs as well as a playlist for the promotions.</span>
+            <span>In OBS scripts, use "obs_hijack_script.py" to import the file created in the previous step, you should now have new scenes for each of your DJs as well as a playlist for the promotions.</span>
         </div>
     </div>
 </Modal>

@@ -10,7 +10,7 @@ export interface ILineupDj {
   name: string;
   is_live: boolean;
   url?: string;
-  recording_path?: string
+  recording_path?: string;
 }
 export interface IPromo {
   name: string;
@@ -72,12 +72,26 @@ export interface IFileDialogBlob {
 }
 
 export interface IStaticPermissions {
-  logos: IStaticFolderPermission[],
-  recordings: IStaticFolderPermission[],
-  exports: IStaticFolderPermission[]
+  logos: IStaticFolderPermission[];
+  recordings: IStaticFolderPermission[];
+  exports: IStaticFolderPermission[];
 }
 
 export interface IStaticFolderPermission {
-  id: string,
-  path: string
+  id: string;
+  path: string;
+}
+
+export interface IExportDjineupData {
+  name: string;
+  logo_path: string;
+  recording_path: string;
+  resolution: Promise<number[] | Error>;
+  url: string;
+}
+
+export interface IExportPromoLineupData {
+  name: string;
+  path: string;
+  resolution: Promise<number[] | Error>;
 }
