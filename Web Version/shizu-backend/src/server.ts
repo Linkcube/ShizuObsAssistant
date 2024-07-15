@@ -1,4 +1,4 @@
-import { createHandler } from 'graphql-http/lib/use/express';
+import { createHandler } from "graphql-http/lib/use/express";
 import { SCHEMA } from "./schema";
 import {
   getLedger,

@@ -1,7 +1,8 @@
 <script>
     import {
         IconButton,
-        MaterialSelect
+        MaterialSelect,
+        MaterialInput
     } from 'linkcube-svelte-components';
     import Modal from './Modal.svelte';
     import { 
@@ -19,6 +20,7 @@
     export let current_lineup = "";
     export let name = "";
     export let is_live = false;
+    export let vj = "";
 
     const dispatch = createEventDispatcher();
     const close = () => dispatch('close');
@@ -26,7 +28,8 @@
     const rtmp_conversion = {
         "us-west": "US West",
         "us-east": "US East",
-        "japan": "Japan"
+        "jp": "Japan",
+        "europe": "Europe"
     };
     let logo_name = "";
     let recording_name = "";
@@ -63,7 +66,7 @@
     }
 
     export const saveDj = () => {
-        fetchUpdateLineupDj(current_lineup, dj_data.name, is_live).then(_ => fetchLineup(current_lineup));
+        fetchUpdateLineupDj(current_lineup, dj_data.name, is_live, vj).then(_ => fetchLineup(current_lineup));
         close();
     }
 </script>
@@ -111,6 +114,9 @@
                     <option value={false}>False</option>
                     <option value={true}>True</option>
                 </MaterialSelect>
+            </div>
+            <div class="row">
+                <MaterialInput label="VJ Name" bind:value={vj}/>
             </div>
         </div>
     </Modal>

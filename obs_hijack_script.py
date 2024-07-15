@@ -54,6 +54,7 @@ class Hijack:
         # Initialize djs->promos scenes in memory
         lineup_scenes = []
         for dj_entry in lineup_data[DJ_KEY]:
+            print(dj_entry)
             dj_scene = ObsSceneValue(
                 dj_entry.get("name"),
                 True,
@@ -66,6 +67,7 @@ class Hijack:
                 dj_scene.stream_url = dj_entry.get("url")
             else:
                 dj_scene.recording_path = dj_entry.get("recording_path")
+            dj_scene.vj = dj_entry.get("vj")
             lineup_scenes.append(dj_scene)
         promos = []
         for promo in lineup_data[PROMO_KEY]:
@@ -190,6 +192,36 @@ class Hijack:
 
             S.obs_data_release(text_settings)
             S.obs_source_release(text_source)
+    
+        # Setup VJ
+        if scene_values.vj:
+            text_source_name = f"{scene_values.name}_vj"
+            text_settings = S.obs_data_create()
+            S.obs_data_set_string(text_settings, "text", "VJ: " + scene_values.vj)
+            font_data_obj = S.obs_data_create_from_json(json.dumps({"face":"Arial","style":"Regular","size":200,"flags":0}))
+            S.obs_data_set_obj(text_settings, "font", font_data_obj)
+            text_source = S.obs_source_create("text_gdiplus", text_source_name, text_settings, None)
+            text_item = S.obs_scene_add(scene, text_source)
+
+            # From OBS c obs-defs.h
+            align_right = 1 << 1
+            align_bottom = 1 << 3
+
+            alignment = align_right | align_bottom
+            S.obs_sceneitem_set_alignment(text_item, alignment)
+
+            pos = S.vec2()
+            pos.x = self.render_width
+            pos.y = self.render_height
+            S.obs_sceneitem_set_pos(text_item, pos)
+
+            scale = S.vec2()
+            scale.x = 1
+            scale.y = 1
+            S.obs_sceneitem_set_scale(text_item, scale)
+
+            S.obs_data_release(text_settings)
+            S.obs_source_release(text_source)
 
 
     def setup_promo_scene_items(self, scene, promotion: 'ObsPromoScene'):
@@ -222,6 +254,7 @@ class ObsSceneValue:
     recording_path = None
     stream_url = None
     resolution = None
+    vj = None
 
     def __init__(self, name, is_dj, logo_path, recording_path, stream_url, resolution):
         self.name = name
@@ -232,7 +265,7 @@ class ObsSceneValue:
         self.resolution = resolution
     
     def __str__(self) -> str:
-        return f"Name: {self.name}, is_dj: {self.is_dj}, logo: {self.logo_path}, rec: {self.recording_path}, url: {self.stream_url}"
+        return f"Name: {self.name}, is_dj: {self.is_dj}, logo: {self.logo_path}, rec: {self.recording_path}, url: {self.stream_url}, vj: {self.vj}"
 
 class ObsPromoScene(ObsSceneValue):
     def __init__(self, paths):

@@ -6,15 +6,18 @@ export interface IDj {
   stream_key?: string;
   last_live_resolution?: number[];
 }
+
 export interface ILineupDj {
   name: string;
   is_live: boolean;
   url?: string;
   recording_path?: string;
+  vj?: string;
 }
+
 export interface IPromo {
   name: string;
-  path: string;
+  path?: string;
 }
 
 export interface ILedger {
@@ -88,6 +91,7 @@ export interface IExportDjineupData {
   recording_path: string;
   resolution: Promise<number[] | Error>;
   url: string;
+  vj: string;
 }
 
 export interface IExportPromoLineupData {
