@@ -291,7 +291,7 @@ mutation {
 const getLineup = (name) => `
 query {
     getLineup(name: "${name}") {
-        djs {name, is_live}
+        djs {name, is_live, vj}
         promos
     }
 }`
@@ -321,12 +321,13 @@ mutation {
     )
 }`
 
-const setLineupDjLiveMutation = (lineup_name, dj_name, is_live) => `
+const updateLineupDjMutation = (lineup_name, dj_name, is_live, vj) => `
 mutation {
     setLineupDjLive(
         lineup_name: "${lineup_name}",
         dj_name: "${dj_name}",
-        is_live: ${is_live}
+        is_live: ${is_live},
+        vj: "${vj}"
     )
 }`
 
@@ -575,8 +576,8 @@ export function fetchAddDjToLineup(lineup_name, dj_name) {
     });
 }
 
-export function fetchUpdateLineupDj(lineup_name, dj_name, is_live) {
-    return fetch(setLineupDjLiveMutation(lineup_name, dj_name, is_live)).then(promise => {
+export function fetchUpdateLineupDj(lineup_name, dj_name, is_live, vj) {
+    return fetch(updateLineupDjMutation(lineup_name, dj_name, is_live, vj)).then(promise => {
         Promise.resolve(promise).then(response => {
 			if (response.hasOwnProperty("errors")) {
                 errorStackPushHelper(response.errors[0]);

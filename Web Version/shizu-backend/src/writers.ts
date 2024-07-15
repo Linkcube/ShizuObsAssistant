@@ -84,10 +84,10 @@ function validate_export(export_path: string) {
 
 export const addDj = (data: {
   name: string;
-  logo_path: string;
-  recording_path: string;
-  rtmp_server: string;
-  stream_key: string;
+  logo_path?: string;
+  recording_path?: string;
+  rtmp_server?: string;
+  stream_key?: string;
 }) => {
   const ledger_path = JSON.parse(
     readFileSync(SETTINGS_FILE, "utf-8"),
@@ -121,7 +121,7 @@ export const addDj = (data: {
   return ledger_data;
 };
 
-export const addPromo = (data: { name: string; path: string }) => {
+export const addPromo = (data: { name: string; path?: string }) => {
   const ledger_path = JSON.parse(
     readFileSync(SETTINGS_FILE, "utf-8"),
   ).ledger_path;
@@ -152,11 +152,11 @@ export const addPromo = (data: { name: string; path: string }) => {
 
 export const updateDj = (data: {
   index: number;
-  name: string;
-  logo_path: string;
-  recording_path: string;
-  rtmp_server: string;
-  stream_key: string;
+  name?: string;
+  logo_path?: string;
+  recording_path?: string;
+  rtmp_server?: string;
+  stream_key?: string;
 }) => {
   const ledger_path = JSON.parse(
     readFileSync(SETTINGS_FILE, "utf-8"),
@@ -170,8 +170,8 @@ export const updateDj = (data: {
   }
 
   if (
-    ledger_data.djs.find((dj) => {
-      return dj.name === data.name;
+    ledger_data.djs.find((dj, index) => {
+      return dj.name === data.name && index !== data.index;
     })
   ) {
     return new InvalidDjError(`DJ ${data.name} already exists`);
@@ -204,31 +204,35 @@ export const updateDj = (data: {
   writeFileSync(ledger_path, JSON.stringify(ledger_data));
 
   // Update lineups
-  const settings_data: ISettings = JSON.parse(
-    readFileSync(SETTINGS_FILE, "utf-8"),
-  );
-  const lineups: string[] = readdirSync(settings_data.lineups_dir, {
-    withFileTypes: true,
-  })
-    .filter((file: Dirent) => file.isFile())
-    .map((file: Dirent) => file.name);
+  if (data.name) {
+    const settings_data: ISettings = JSON.parse(
+      readFileSync(SETTINGS_FILE, "utf-8"),
+    );
+    const lineups: string[] = readdirSync(settings_data.lineups_dir, {
+      withFileTypes: true,
+    })
+      .filter((file: Dirent) => file.isFile())
+      .map((file: Dirent) => file.name);
 
-  lineups.map((lineup) => {
-    const lineup_path = join(settings_data.lineups_dir, lineup);
-    const lineup_data: ILineup = JSON.parse(readFileSync(lineup_path, "utf-8"));
-    lineup_data.djs.map((dj, index) => {
-      if (dj.name === old_name) lineup_data.djs[index].name = data.name;
+    lineups.map((lineup) => {
+      const lineup_path = join(settings_data.lineups_dir, lineup);
+      const lineup_data: ILineup = JSON.parse(
+        readFileSync(lineup_path, "utf-8"),
+      );
+      lineup_data.djs.map((dj, index) => {
+        if (dj.name === old_name) lineup_data.djs[index].name = data.name!;
+      });
+      writeFileSync(lineup_path, JSON.stringify(lineup_data));
     });
-    writeFileSync(lineup_path, JSON.stringify(lineup_data));
-  });
+  }
 
   return ledger_data;
 };
 
 export const updatePromo = (data: {
   index: number;
-  name: string;
-  path: string;
+  name?: string;
+  path?: string;
 }) => {
   const ledger_path = JSON.parse(
     readFileSync(SETTINGS_FILE, "utf-8"),
@@ -242,8 +246,8 @@ export const updatePromo = (data: {
   }
 
   if (
-    ledger_data.promos.find((promo) => {
-      return promo.name === data.name;
+    ledger_data.promos.find((promo, index) => {
+      return promo.name === data.name && index !== data.index;
     })
   ) {
     return new InvalidPromoError(`Promo ${data.name} already exists`);
@@ -265,23 +269,27 @@ export const updatePromo = (data: {
   writeFileSync(ledger_path, JSON.stringify(ledger_data));
 
   // Update lineups
-  const settings_data: ISettings = JSON.parse(
-    readFileSync(SETTINGS_FILE, "utf-8"),
-  );
-  const lineups: string[] = readdirSync(settings_data.lineups_dir, {
-    withFileTypes: true,
-  })
-    .filter((file: Dirent) => file.isFile())
-    .map((file: Dirent) => file.name);
+  if (data.name) {
+    const settings_data: ISettings = JSON.parse(
+      readFileSync(SETTINGS_FILE, "utf-8"),
+    );
+    const lineups: string[] = readdirSync(settings_data.lineups_dir, {
+      withFileTypes: true,
+    })
+      .filter((file: Dirent) => file.isFile())
+      .map((file: Dirent) => file.name);
 
-  lineups.map((lineup) => {
-    const lineup_path = join(settings_data.lineups_dir, lineup);
-    const lineup_data: ILineup = JSON.parse(readFileSync(lineup_path, "utf-8"));
-    lineup_data.promos.map((promo, index) => {
-      if (promo === old_name) lineup_data.promos[index] = data.name;
+    lineups.map((lineup) => {
+      const lineup_path = join(settings_data.lineups_dir, lineup);
+      const lineup_data: ILineup = JSON.parse(
+        readFileSync(lineup_path, "utf-8"),
+      );
+      lineup_data.promos.map((promo, index) => {
+        if (promo === old_name) lineup_data.promos[index] = data.name!;
+      });
+      writeFileSync(lineup_path, JSON.stringify(lineup_data));
     });
-    writeFileSync(lineup_path, JSON.stringify(lineup_data));
-  });
+  }
 
   return ledger_data;
 };
@@ -457,6 +465,7 @@ export const setLineupDjLive = (data: {
   lineup_name: string;
   dj_name: string;
   is_live: boolean;
+  vj?: string;
 }) => {
   const lineup = getLineup({ name: data.lineup_name });
   if (lineup instanceof Error) return lineup;
@@ -472,6 +481,7 @@ export const setLineupDjLive = (data: {
     );
 
   lineup.djs[dj_index].is_live = data.is_live;
+  if (data.vj) lineup.djs[dj_index].vj = data.vj;
 
   writeToLineupHelper(data.lineup_name, {
     djs: lineup.djs,
@@ -699,9 +709,9 @@ export const deleteLineup = (data: { name: string }) => {
 };
 
 export const updateSettings = (data: {
-  ledger_path: string;
-  lineups_dir: string;
-  theme_index: number;
+  ledger_path?: string;
+  lineups_dir?: string;
+  theme_index?: number;
 }) => {
   const settings_data: ISettings = JSON.parse(
     readFileSync(SETTINGS_FILE, "utf-8"),
@@ -788,6 +798,7 @@ export const exportLineup = async (data: {
       recording_path: "",
       resolution: Promise.resolve([]),
       url: "",
+      vj: "",
     };
     export_data.logo_path = dj_data.logo_path ? dj_data.logo_path : "";
     if (dj.is_live) {
@@ -798,6 +809,7 @@ export const exportLineup = async (data: {
         export_data.resolution = getResolution(dj_data.recording_path);
       }
     }
+    if (dj.vj) export_data.vj = dj.vj;
     return export_data;
   });
 
@@ -839,6 +851,7 @@ export const exportLineup = async (data: {
         recording_path: resolvePath(dj.recording_path),
         resolution: await dj.resolution,
         url: dj.url,
+        vj: dj.vj,
       };
     }),
   );

@@ -48,6 +48,7 @@
     let edit_dj_index = 0;
     let edit_dj_name = "";
     let edit_dj_is_live = false;
+    let edit_dj_vj = "";
     let show_edit_dj = false;
 
     let edit_promo_index = 0;
@@ -112,12 +113,13 @@
 		current_lineup = null;
 	}
 
-    const editDj = (index, name, is_live) => {
+    const editDj = (index, name, is_live, vj) => {
         show_export_error = true;
         last_action = EDIT_DJ_FAILED;
         edit_dj_index = index;
         edit_dj_name = name;
         edit_dj_is_live = is_live;
+        edit_dj_vj = vj;
         show_edit_dj = true;
     }
 
@@ -315,6 +317,7 @@
         name={edit_dj_name}
         is_live={edit_dj_is_live}
         current_lineup={current_lineup}
+        vj={edit_dj_vj}
         on:close={() => show_edit_dj = false}
     />
 {/if}
@@ -378,7 +381,7 @@
                         <NewMatTableRow
                             values={[`${index + 1}`, item.name, item.is_live]}
                             type="click row draggable"
-                            on:click={() => editDj(index, item.name, item.is_live)}
+                            on:click={() => editDj(index, item.name, item.is_live, item.vj)}
                             on:dragstart={() => handleDragStart(index)}
                             on:dragover={() => handleDragOver(index)}
                             on:dragend={() => handleDjDragEnd()}

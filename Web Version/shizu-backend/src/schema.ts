@@ -2,6 +2,7 @@ import { buildSchema } from "graphql";
 
 export const SCHEMA = buildSchema(`
 type Query {
+    test(mandatory: String!, optional: String): String
     getLedger: ledgerObject
     getLineup(name: String!): lineupObject
     getAppThemes: [themeObject]
@@ -23,7 +24,7 @@ type Mutation {
     updatePromo(index: Int!, name: String, path: String): ledgerObject
     createLineup(name: String!): String
     updateLineup(name: String!, djs: [lineupDjObjectInput], promos: [String]): String
-    setLineupDjLive(lineup_name: String!, dj_name: String!, is_live: Boolean!): String
+    setLineupDjLive(lineup_name: String!, dj_name: String!, is_live: Boolean, vj: String): String
     swapLineupDJs(lineup_name: String!, index_a: Int!, index_b: Int!): String
     swapLineupPromos(lineup_name: String!, index_a: Int!, index_b: Int!): String
     addDjToLineup(lineup_name: String!, dj_name: String!): String
@@ -61,7 +62,8 @@ type promoObject {
 },
 type lineupDjObject {
     name: String,
-    is_live: Boolean
+    is_live: Boolean,
+    vj: String
 },
 type themeObject {
     title: String,
